@@ -132,6 +132,7 @@ export function KanbanBoard() {
             onClose={() => setChatOpen(false)}
             tasks={tasks}
             onAddTask={(task) => addTask(task)}
+            onUpdateTask={updateTask}
           />
         </div>
       </div>
