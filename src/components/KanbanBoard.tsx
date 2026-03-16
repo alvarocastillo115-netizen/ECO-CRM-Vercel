@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export function KanbanBoard() {
-  const { tasks, addTask, moveTask, deleteTask, getTasksByColumn } = useKanban();
+  const { tasks, addTask, moveTask, deleteTask, updateTask, getTasksByColumn } = useKanban();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogColumn, setDialogColumn] = useState<ColumnId>("todo");
   const [chatOpen, setChatOpen] = useState(false);
