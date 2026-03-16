@@ -1,27 +1,92 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Send, X, Sparkles } from "lucide-react";
-import { Task } from "@/types/kanban";
+import { Send, X, Sparkles, CheckCircle2, Pencil, Plus } from "lucide-react";
+import { Task, ColumnId, Priority } from "@/types/kanban";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  actions?: TaskAction[];
+}
+
+interface TaskAction {
+  type: "create" | "edit";
+  taskId?: string;
+  title?: string;
+  description?: string;
+  priority?: Priority;
+  dueDate?: string | null;
+  columnId?: ColumnId;
+  applied?: boolean;
 }
 
 interface AIChatPanelProps {
   open: boolean;
   onClose: () => void;
   tasks: Task[];
-  onAddTask: (task: { title: string; description: string; priority: "low" | "medium" | "high" | "urgent"; dueDate: string | null; columnId: "todo" }) => void;
+  onAddTask: (task: { title: string; description: string; priority: Priority; dueDate: string | null; columnId: ColumnId }) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
 }
 
-export function AIChatPanel({ open, onClose, tasks, onAddTask }: AIChatPanelProps) {
+function parseActions(content: string): { cleanContent: string; actions: TaskAction[] } {
+  const actions: TaskAction[] = [];
+  const actionRegex = /```task-action\n([\s\S]*?)```/g;
+  let match;
+
+  while ((match = actionRegex.exec(content)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      if (Array.isArray(parsed)) {
+        actions.push(...parsed);
+      } else {
+        actions.push(parsed);
+      }
+    } catch (e) {
+      console.warn("Failed to parse task action:", e);
+    }
+  }
+
+  const cleanContent = content.replace(/```task-action\n[\s\S]*?```/g, "").trim();
+  return { cleanContent, actions };
+}
+
+function ActionButton({ action, onApply }: { action: TaskAction; onApply: () => void }) {
+  if (action.applied) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        {action.type === "create" ? `Created "${action.title}"` : `Updated "${action.title}"`}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onApply}
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors w-full text-left"
+    >
+      {action.type === "create" ? (
+        <Plus className="h-3.5 w-3.5 flex-shrink-0" />
+      ) : (
+        <Pencil className="h-3.5 w-3.5 flex-shrink-0" />
+      )}
+      <span className="truncate">
+        {action.type === "create"
+          ? `Create: "${action.title}"`
+          : `Edit: "${action.title}"${action.priority ? ` → ${action.priority}` : ""}${action.columnId ? ` → ${action.columnId}` : ""}`}
+      </span>
+    </button>
+  );
+}
+
+export function AIChatPanel({ open, onClose, tasks, onAddTask, onUpdateTask }: AIChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
-        "Hi! I'm your task assistant. I can see your board and help break down tasks, suggest priorities, or answer questions. Try asking me to **break down a task** or **suggest what to work on next**.",
+        "Hi! I'm your task assistant. I can **see your board**, **create new tasks**, and **edit existing ones**. Try:\n- \"Create a task for writing unit tests\"\n- \"Change the priority of Build API to medium\"\n- \"Break down Design system into subtasks\"",
     },
   ]);
   const [input, setInput] = useState("");
@@ -41,10 +106,48 @@ export function AIChatPanel({ open, onClose, tasks, onAddTask }: AIChatPanelProp
     const taskSummary = tasks
       .map(
         (t) =>
-          `- [${t.columnId}] "${t.title}" (${t.priority} priority${t.dueDate ? `, due ${t.dueDate}` : ""})`
+          `- [id:${t.id}] [${t.columnId}] "${t.title}" (${t.priority} priority${t.dueDate ? `, due ${t.dueDate}` : ""})${t.description ? ` — ${t.description}` : ""}`
       )
       .join("\n");
     return `Current board tasks:\n${taskSummary || "(no tasks)"}`;
+  };
+
+  const applyAction = (msgIndex: number, actionIndex: number) => {
+    const msg = messages[msgIndex];
+    if (!msg.actions) return;
+    const action = msg.actions[actionIndex];
+
+    if (action.type === "create" && action.title) {
+      onAddTask({
+        title: action.title,
+        description: action.description || "",
+        priority: action.priority || "medium",
+        dueDate: action.dueDate ?? null,
+        columnId: action.columnId || "todo",
+      });
+      toast({ title: "Task created", description: `"${action.title}" added to the board.` });
+    } else if (action.type === "edit" && action.taskId) {
+      const updates: Partial<Task> = {};
+      if (action.title) updates.title = action.title;
+      if (action.description !== undefined) updates.description = action.description;
+      if (action.priority) updates.priority = action.priority;
+      if (action.dueDate !== undefined) updates.dueDate = action.dueDate;
+      if (action.columnId) updates.columnId = action.columnId;
+      onUpdateTask(action.taskId, updates);
+      toast({ title: "Task updated", description: `"${action.title || "Task"}" has been updated.` });
+    }
+
+    setMessages((prev) =>
+      prev.map((m, i) => {
+        if (i !== msgIndex || !m.actions) return m;
+        return {
+          ...m,
+          actions: m.actions.map((a, j) =>
+            j === actionIndex ? { ...a, applied: true } : a
+          ),
+        };
+      })
+    );
   };
 
   const sendMessage = async () => {
@@ -54,11 +157,25 @@ export function AIChatPanel({ open, onClose, tasks, onAddTask }: AIChatPanelProp
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
-    let assistantSoFar = "";
-
     const systemMessage = {
       role: "system" as const,
-      content: `You are a helpful task management AI assistant. You can see the user's Kanban board and provide actionable advice. Be concise and direct. Use markdown formatting. When suggesting task breakdowns, format them as bullet points.
+      content: `You are a helpful task management AI assistant. You can see the user's Kanban board and provide actionable advice. Be concise and direct. Use markdown formatting.
+
+IMPORTANT — You can CREATE and EDIT tasks. When the user asks you to create or modify tasks, include a task-action code block in your response with the JSON. The frontend will parse this and show action buttons.
+
+For CREATING tasks, use:
+\`\`\`task-action
+{"type":"create","title":"Task title","description":"Description","priority":"medium","columnId":"todo","dueDate":"2026-03-20"}
+\`\`\`
+
+For EDITING existing tasks, use the task's id from the board context:
+\`\`\`task-action
+{"type":"edit","taskId":"<id>","title":"Updated title","priority":"high","columnId":"in-progress"}
+\`\`\`
+
+You can include multiple actions as an array. Only include the fields that need changing for edits. Valid priorities: low, medium, high, urgent. Valid columns: todo, in-progress, reviewed, done.
+
+Always explain what you're doing in natural language alongside the action blocks.
 
 ${buildTaskContext()}`,
     };
@@ -76,13 +193,13 @@ ${buildTaskContext()}`,
 
       if (resp.error) throw resp.error;
 
-      // Non-streaming response
       const data = resp.data;
       if (data?.choices?.[0]?.message?.content) {
-        assistantSoFar = data.choices[0].message.content;
+        const raw = data.choices[0].message.content;
+        const { cleanContent, actions } = parseActions(raw);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: assistantSoFar },
+          { role: "assistant", content: cleanContent, actions: actions.length > 0 ? actions : undefined },
         ]);
       } else if (data?.error) {
         throw new Error(data.error);
@@ -91,10 +208,7 @@ ${buildTaskContext()}`,
       console.error("AI chat error:", e);
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
-        },
+        { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
       ]);
     } finally {
       setIsLoading(false);
@@ -126,19 +240,32 @@ ${buildTaskContext()}`,
             key={i}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-surface text-foreground"
-              }`}
-            >
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none [&_p]:m-0 [&_ul]:my-1 [&_li]:my-0">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+            <div className="max-w-[85%] space-y-2">
+              <div
+                className={`rounded-xl px-3.5 py-2.5 text-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface text-foreground"
+                }`}
+              >
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm max-w-none [&_p]:m-0 [&_ul]:my-1 [&_li]:my-0">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
+              </div>
+              {msg.actions && msg.actions.length > 0 && (
+                <div className="space-y-1.5">
+                  {msg.actions.map((action, j) => (
+                    <ActionButton
+                      key={j}
+                      action={action}
+                      onApply={() => applyAction(i, j)}
+                    />
+                  ))}
                 </div>
-              ) : (
-                msg.content
               )}
             </div>
           </div>
@@ -165,7 +292,7 @@ ${buildTaskContext()}`,
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Ask about your tasks..."
+            placeholder="Ask, create, or edit tasks..."
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
           <button
