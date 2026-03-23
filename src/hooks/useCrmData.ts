@@ -124,11 +124,12 @@ export function useCrmData() {
     ) => {
       const { services, ...taskUpdates } = data;
 
+      const finalUpdates: Record<string, any> = { ...taskUpdates };
       if (services) {
-        taskUpdates.total_amount = services.reduce((s, sv) => s + sv.amount_allocated, 0) as any;
+        finalUpdates.total_amount = services.reduce((s, sv) => s + sv.amount_allocated, 0);
       }
 
-      const { error } = await supabase.from("crm_tasks").update(taskUpdates).eq("id", taskId);
+      const { error } = await supabase.from("crm_tasks").update(finalUpdates).eq("id", taskId);
       if (error) return { error: error.message };
 
       if (services) {
