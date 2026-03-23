@@ -14,36 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
-      tasks: {
+      categories: {
         Row: {
-          column_id: string
           created_at: string
-          description: string | null
-          due_date: string | null
           id: string
-          priority: string
-          title: string
+          is_custom: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      crm_tasks: {
+        Row: {
+          assigned_to_user_id: string | null
+          client_id: string
+          created_at: string
+          description: string
+          id: string
+          keep_an_eye_date: string | null
+          keep_an_eye_period_months: number | null
+          scheduled_date: string | null
+          specifications: string
+          status: string
+          total_amount: number
           updated_at: string
         }
         Insert: {
-          column_id?: string
+          assigned_to_user_id?: string | null
+          client_id: string
           created_at?: string
-          description?: string | null
-          due_date?: string | null
+          description?: string
           id?: string
-          priority?: string
-          title: string
+          keep_an_eye_date?: string | null
+          keep_an_eye_period_months?: number | null
+          scheduled_date?: string | null
+          specifications?: string
+          status?: string
+          total_amount?: number
           updated_at?: string
         }
         Update: {
-          column_id?: string
+          assigned_to_user_id?: string | null
+          client_id?: string
           created_at?: string
-          description?: string | null
-          due_date?: string | null
+          description?: string
           id?: string
-          priority?: string
-          title?: string
+          keep_an_eye_date?: string | null
+          keep_an_eye_period_months?: number | null
+          scheduled_date?: string | null
+          specifications?: string
+          status?: string
+          total_amount?: number
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      task_services: {
+        Row: {
+          amount_allocated: number
+          category_id: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          amount_allocated?: number
+          category_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          amount_allocated?: number
+          category_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_services_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -52,10 +192,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -182,6 +328,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee"],
+    },
   },
 } as const
