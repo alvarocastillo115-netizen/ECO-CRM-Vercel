@@ -1,7 +1,7 @@
-import { KanbanBoard } from "@/components/KanbanBoard";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return <KanbanBoard />;
+  return <Navigate to="/" replace />;
 };
 
 export default Index;

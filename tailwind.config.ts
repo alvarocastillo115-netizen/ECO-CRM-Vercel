@@ -24,6 +24,7 @@ export default {
         lg: ["1rem", { lineHeight: "1.5rem" }],
         xl: ["1.125rem", { lineHeight: "1.75rem" }],
         "2xl": ["1.25rem", { lineHeight: "1.75rem" }],
+        "3xl": ["1.5rem", { lineHeight: "2rem" }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -75,6 +76,14 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        emerald: {
+          DEFAULT: "hsl(var(--emerald))",
+          foreground: "hsl(var(--emerald-foreground))",
+        },
+        "deep-blue": {
+          DEFAULT: "hsl(var(--deep-blue))",
+          foreground: "hsl(var(--deep-blue-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -100,20 +109,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "slide-in-right": {
-          from: { transform: "translateX(100%)" },
-          to: { transform: "translateX(0)" },
-        },
-        "slide-out-right": {
-          from: { transform: "translateX(0)" },
-          to: { transform: "translateX(100%)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "slide-in-right": "slide-in-right 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)",
-        "slide-out-right": "slide-out-right 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)",
       },
     },
   },
