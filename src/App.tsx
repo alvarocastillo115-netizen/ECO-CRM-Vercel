@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
 import KanbanPage from "@/pages/KanbanPage";
+import CalendarPage from "@/pages/CalendarPage";
+import ClientsPage from "@/pages/ClientsPage";
 import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
