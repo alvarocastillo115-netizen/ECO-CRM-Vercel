@@ -43,6 +43,7 @@ export function CreateTaskDialog({
   const [newClientName, setNewClientName] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientBranch, setNewClientBranch] = useState("");
   
   const [scheduledDate, setScheduledDate] = useState("");
   const [specifications, setSpecifications] = useState("");
