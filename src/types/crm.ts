@@ -23,6 +23,7 @@ export interface Client {
   name: string;
   address: string;
   phone: string;
+  branch: string;
   created_at: string;
 }
 

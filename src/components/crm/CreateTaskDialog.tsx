@@ -98,6 +98,7 @@ export function CreateTaskDialog({
         name: newClientName.trim(),
         address: newClientAddress.trim(),
         phone: newClientPhone.trim(),
+        branch: newClientBranch.trim(),
       });
       if (error || !data) {
         toast({ title: "Error", description: error || "No se pudo crear el cliente", variant: "destructive" });

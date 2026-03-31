@@ -84,7 +84,7 @@ export function TaskDetailDialog({
     }
 
     const updateData: any = {
-      description,
+      
       specifications,
       scheduled_date: scheduledDate || null,
       assigned_to_user_id: assignedTo || null,

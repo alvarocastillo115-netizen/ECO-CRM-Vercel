@@ -152,7 +152,7 @@ export function useCrmData() {
   );
 
   const createClient = useCallback(
-    async (data: { name: string; address: string; phone: string }) => {
+    async (data: { name: string; address: string; phone: string; branch?: string }) => {
       const { data: newClient, error } = await supabase
         .from("clients")
         .insert(data)
