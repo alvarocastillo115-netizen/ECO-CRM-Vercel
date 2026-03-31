@@ -44,7 +44,7 @@ export function TaskDetailDialog({
   useEffect(() => {
     if (task) {
       setStatus(task.status as TaskStatus);
-      setDescription(task.description);
+      
       setSpecifications(task.specifications);
       setScheduledDate(task.scheduled_date || "");
       setAssignedTo(task.assigned_to_user_id || "");
