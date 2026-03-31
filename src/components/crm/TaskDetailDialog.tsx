@@ -32,7 +32,7 @@ export function TaskDetailDialog({
   onUpdateStatus,
 }: TaskDetailDialogProps) {
   const [status, setStatus] = useState<TaskStatus>("To-Do");
-  const [description, setDescription] = useState("");
+  
   const [specifications, setSpecifications] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
