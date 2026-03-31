@@ -25,7 +25,7 @@ interface CreateTaskDialogProps {
     assigned_to_user_id: string | null;
     services: { category_id: string; amount_allocated: number }[];
   }) => Promise<{ error: string | null }>;
-  onCreateClient: (data: { name: string; address: string; phone: string }) => Promise<{ data: Client | null; error: string | null }>;
+  onCreateClient: (data: { name: string; address: string; phone: string; branch?: string }) => Promise<{ data: Client | null; error: string | null }>;
 }
 
 export function CreateTaskDialog({
