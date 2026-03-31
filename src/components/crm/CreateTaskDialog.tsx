@@ -160,6 +160,7 @@ export function CreateTaskDialog({
             {newClientMode ? (
               <div className="space-y-2">
                 <Input placeholder="Nombre" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                <Input placeholder="Sucursal" value={newClientBranch} onChange={(e) => setNewClientBranch(e.target.value)} />
                 <Input placeholder="Dirección" value={newClientAddress} onChange={(e) => setNewClientAddress(e.target.value)} />
                 <Input placeholder="Teléfono" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
               </div>
