@@ -119,7 +119,7 @@ export function CreateTaskDialog({
 
     const { error } = await onCreateTask({
       client_id: finalClientId,
-      description,
+      description: "",
       scheduled_date: scheduledDate || null,
       specifications,
       assigned_to_user_id: assignedTo || null,
