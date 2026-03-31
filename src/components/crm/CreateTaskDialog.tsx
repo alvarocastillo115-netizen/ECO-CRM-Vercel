@@ -25,7 +25,7 @@ interface CreateTaskDialogProps {
     assigned_to_user_id: string | null;
     services: { category_id: string; amount_allocated: number }[];
   }) => Promise<{ error: string | null }>;
-  onCreateClient: (data: { name: string; address: string; phone: string }) => Promise<{ data: Client | null; error: string | null }>;
+  onCreateClient: (data: { name: string; address: string; phone: string; branch?: string }) => Promise<{ data: Client | null; error: string | null }>;
 }
 
 export function CreateTaskDialog({
@@ -43,7 +43,8 @@ export function CreateTaskDialog({
   const [newClientName, setNewClientName] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
-  const [description, setDescription] = useState("");
+  const [newClientBranch, setNewClientBranch] = useState("");
+  
   const [scheduledDate, setScheduledDate] = useState("");
   const [specifications, setSpecifications] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
@@ -74,7 +75,7 @@ export function CreateTaskDialog({
     setNewClientName("");
     setNewClientAddress("");
     setNewClientPhone("");
-    setDescription("");
+    
     setScheduledDate("");
     setSpecifications("");
     setAssignedTo("");
@@ -97,6 +98,7 @@ export function CreateTaskDialog({
         name: newClientName.trim(),
         address: newClientAddress.trim(),
         phone: newClientPhone.trim(),
+        branch: newClientBranch.trim(),
       });
       if (error || !data) {
         toast({ title: "Error", description: error || "No se pudo crear el cliente", variant: "destructive" });
@@ -119,7 +121,7 @@ export function CreateTaskDialog({
 
     const { error } = await onCreateTask({
       client_id: finalClientId,
-      description,
+      description: "",
       scheduled_date: scheduledDate || null,
       specifications,
       assigned_to_user_id: assignedTo || null,
@@ -159,6 +161,7 @@ export function CreateTaskDialog({
             {newClientMode ? (
               <div className="space-y-2">
                 <Input placeholder="Nombre" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                <Input placeholder="Sucursal" value={newClientBranch} onChange={(e) => setNewClientBranch(e.target.value)} />
                 <Input placeholder="Dirección" value={newClientAddress} onChange={(e) => setNewClientAddress(e.target.value)} />
                 <Input placeholder="Teléfono" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
               </div>
@@ -218,11 +221,7 @@ export function CreateTaskDialog({
             )}
           </div>
 
-          {/* Description & specs */}
-          <div>
-            <Label>Descripción</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="mt-1" />
-          </div>
+          {/* Specs */}
           <div>
             <Label>Especificaciones / Indicaciones</Label>
             <Textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
@@ -235,7 +234,7 @@ export function CreateTaskDialog({
               <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label>Asignar a</Label>
+              <Label>Personal asignado</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Empleado..." /></SelectTrigger>
                 <SelectContent>

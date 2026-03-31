@@ -32,7 +32,7 @@ export function TaskDetailDialog({
   onUpdateStatus,
 }: TaskDetailDialogProps) {
   const [status, setStatus] = useState<TaskStatus>("To-Do");
-  const [description, setDescription] = useState("");
+  
   const [specifications, setSpecifications] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
@@ -44,7 +44,7 @@ export function TaskDetailDialog({
   useEffect(() => {
     if (task) {
       setStatus(task.status as TaskStatus);
-      setDescription(task.description);
+      
       setSpecifications(task.specifications);
       setScheduledDate(task.scheduled_date || "");
       setAssignedTo(task.assigned_to_user_id || "");
@@ -84,7 +84,7 @@ export function TaskDetailDialog({
     }
 
     const updateData: any = {
-      description,
+      
       specifications,
       scheduled_date: scheduledDate || null,
       assigned_to_user_id: assignedTo || null,
@@ -213,11 +213,7 @@ export function TaskDetailDialog({
             )}
           </div>
 
-          {/* Description & specs */}
-          <div>
-            <Label>Descripción</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="mt-1" />
-          </div>
+          {/* Specs */}
           <div>
             <Label>Especificaciones</Label>
             <Textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
@@ -230,7 +226,7 @@ export function TaskDetailDialog({
               <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label>Asignar a</Label>
+              <Label>Personal asignado</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Empleado..." /></SelectTrigger>
                 <SelectContent>

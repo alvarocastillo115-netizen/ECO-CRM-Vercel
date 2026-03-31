@@ -38,6 +38,7 @@ export type Database = {
       clients: {
         Row: {
           address: string
+          branch: string
           created_at: string
           id: string
           name: string
@@ -45,6 +46,7 @@ export type Database = {
         }
         Insert: {
           address?: string
+          branch?: string
           created_at?: string
           id?: string
           name: string
@@ -52,6 +54,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          branch?: string
           created_at?: string
           id?: string
           name?: string
