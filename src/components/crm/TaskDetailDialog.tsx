@@ -213,11 +213,7 @@ export function TaskDetailDialog({
             )}
           </div>
 
-          {/* Description & specs */}
-          <div>
-            <Label>Descripción</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="mt-1" />
-          </div>
+          {/* Specs */}
           <div>
             <Label>Especificaciones</Label>
             <Textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
