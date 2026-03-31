@@ -41,6 +41,15 @@ const App = () => (
               }
             >
               <Route path="/" element={<KanbanPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route
+                path="/clients"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <ClientsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={

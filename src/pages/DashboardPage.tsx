@@ -1,22 +1,25 @@
 import { useMemo } from "react";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ClipboardList, Users } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
+  XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend,
+} from "recharts";
+import { format, parseISO, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import { es } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 
 const CHART_COLORS = [
-  "hsl(153, 83%, 30%)",
-  "hsl(215, 55%, 24%)",
-  "hsl(38, 92%, 50%)",
-  "hsl(0, 72%, 51%)",
-  "hsl(270, 60%, 50%)",
-  "hsl(180, 60%, 40%)",
+  "hsl(153, 83%, 30%)", "hsl(215, 55%, 24%)", "hsl(38, 92%, 50%)",
+  "hsl(0, 72%, 51%)", "hsl(270, 60%, 50%)", "hsl(180, 60%, 40%)",
+  "hsl(330, 60%, 50%)", "hsl(90, 60%, 40%)", "hsl(200, 70%, 50%)",
+  "hsl(15, 80%, 55%)",
 ];
 
 export default function DashboardPage() {
-  const { tasks, categories, clients, loading } = useCrmData();
+  const { tasks, loading } = useCrmData();
 
   const stats = useMemo(() => {
     const completed = tasks.filter((t) => t.status === "Completed");
@@ -26,7 +29,7 @@ export default function DashboardPage() {
     const totalRevenue = completed.reduce((s, t) => s + Number(t.total_amount), 0);
     const pipelineValue = pipeline.reduce((s, t) => s + Number(t.total_amount), 0);
 
-    // Revenue by category
+    // Revenue by service category (from completed tasks)
     const revByCat: Record<string, number> = {};
     completed.forEach((t) => {
       t.services?.forEach((s) => {
@@ -34,19 +37,37 @@ export default function DashboardPage() {
         revByCat[catName] = (revByCat[catName] || 0) + Number(s.amount_allocated);
       });
     });
-    const pieData = Object.entries(revByCat).map(([name, value]) => ({ name, value }));
 
-    // Monthly trend
-    const monthlyMap: Record<string, number> = {};
+    const serviceData = Object.entries(revByCat)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+    const totalServiceRev = serviceData.reduce((s, d) => s + d.value, 0);
+    const pieData = serviceData.map((d) => ({
+      ...d,
+      percent: totalServiceRev > 0 ? ((d.value / totalServiceRev) * 100).toFixed(1) : "0",
+    }));
+
+    const top5Services = serviceData.slice(0, 5);
+    const bottom5Services = serviceData.length > 5
+      ? serviceData.slice(-5).reverse()
+      : serviceData.slice().reverse().slice(0, 5);
+
+    // Weekly trend (last 12 weeks)
+    const weeklyMap: Record<string, number> = {};
     completed.forEach((t) => {
-      const month = format(startOfMonth(parseISO(t.created_at)), "yyyy-MM");
-      monthlyMap[month] = (monthlyMap[month] || 0) + Number(t.total_amount);
+      const weekStart = format(startOfWeek(parseISO(t.created_at), { weekStartsOn: 1 }), "yyyy-MM-dd");
+      weeklyMap[weekStart] = (weeklyMap[weekStart] || 0) + Number(t.total_amount);
     });
-    const monthlyData = Object.entries(monthlyMap)
+    const weeklyData = Object.entries(weeklyMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, value]) => ({ month: format(parseISO(month + "-01"), "MMM yy"), value }));
+      .slice(-12)
+      .map(([week, value]) => ({
+        week: format(parseISO(week), "dd MMM", { locale: es }),
+        value,
+      }));
 
-    // Top clients
+    // Top 10 clients
     const clientSpend: Record<string, { name: string; total: number }> = {};
     completed.forEach((t) => {
       const cid = t.client_id;
@@ -54,9 +75,13 @@ export default function DashboardPage() {
       if (!clientSpend[cid]) clientSpend[cid] = { name: cname, total: 0 };
       clientSpend[cid].total += Number(t.total_amount);
     });
-    const topClients = Object.values(clientSpend).sort((a, b) => b.total - a.total).slice(0, 5);
+    const topClients = Object.values(clientSpend).sort((a, b) => b.total - a.total).slice(0, 10);
 
-    return { totalRevenue, pipelineValue, activeCount: active.length, pieData, monthlyData, topClients };
+    return {
+      totalRevenue, pipelineValue, activeCount: active.length,
+      serviceData, pieData, top5Services, bottom5Services,
+      weeklyData, topClients,
+    };
   }, [tasks]);
 
   if (loading) {
@@ -67,6 +92,8 @@ export default function DashboardPage() {
     );
   }
 
+  const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
@@ -74,149 +101,189 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-0.5">Insights financieros y operativos</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* 1-3: KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="shadow-card">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Ventas Cobradas</p>
-                <p className="text-2xl font-bold text-foreground tabular-nums mt-1">
-                  ${stats.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Pipeline</p>
-                <p className="text-2xl font-bold text-foreground tabular-nums mt-1">
-                  ${stats.pipelineValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-info" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Tareas Activas</p>
-                <p className="text-2xl font-bold text-foreground tabular-nums mt-1">
-                  {stats.activeCount}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                <ClipboardList className="h-5 w-5 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <KpiCard label="Ventas Cobradas" value={fmtMoney(stats.totalRevenue)} icon={DollarSign} color="primary" />
+        <KpiCard label="Pipeline" value={fmtMoney(stats.pipelineValue)} icon={TrendingUp} color="info" />
+        <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="warning" />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ingresos por Servicio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stats.pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={stats.pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {stats.pieData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-sm text-muted-foreground">
-                Sin datos de tareas completadas
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Line Chart */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tendencia Mensual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stats.monthlyData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={stats.monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
-                  <Line type="monotone" dataKey="value" stroke="hsl(153, 83%, 30%)" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-sm text-muted-foreground">
-                Sin datos de tendencia
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Top Clients */}
+      {/* 4: Ventas por Servicio (Bar Chart) */}
       <Card className="shadow-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Top Clientes
+            <BarChart3 className="h-4 w-4" /> Ventas por Servicio
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {stats.serviceData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={stats.serviceData} layout="vertical" margin={{ left: 100 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={90} />
+                <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                <Bar dataKey="value" fill="hsl(153, 83%, 30%)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <EmptyChart />}
+        </CardContent>
+      </Card>
+
+      {/* 5 & 6: Top/Bottom Services */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowUp className="h-4 w-4 text-emerald-600" /> Top 5 Servicios — Mayor Venta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RankedList items={stats.top5Services} formatValue={fmtMoney} colorClass="text-emerald-600" />
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowDown className="h-4 w-4 text-red-500" /> Bottom 5 Servicios — Menor Venta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RankedList items={stats.bottom5Services} formatValue={fmtMoney} colorClass="text-red-500" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 7: Pie Chart */}
+      <Card className="shadow-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Representación Porcentual por Servicio</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stats.pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={65}
+                  outerRadius={110}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                >
+                  {stats.pieData.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : <EmptyChart />}
+        </CardContent>
+      </Card>
+
+      {/* 8: Tendencia Semanal */}
+      <Card className="shadow-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Tendencia Semanal de Ventas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.weeklyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={stats.weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                <Line type="monotone" dataKey="value" stroke="hsl(215, 55%, 24%)" strokeWidth={2.5} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : <EmptyChart />}
+        </CardContent>
+      </Card>
+
+      {/* 9: Top 10 Clientes */}
+      <Card className="shadow-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-4 w-4" /> Top 10 Clientes — Mayor Venta
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
           {stats.topClients.length > 0 ? (
-            <div className="space-y-3">
-              {stats.topClients.map((client, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <span className="text-sm font-medium">{client.name}</span>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums">
-                    ${client.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.topClients.map((client, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                        {i + 1}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(client.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Sin datos de clientes
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">Sin datos de clientes</p>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function KpiCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
+  return (
+    <Card className="shadow-card">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">{label}</p>
+            <p className="text-2xl font-bold text-foreground tabular-nums mt-1">{value}</p>
+          </div>
+          <div className={`w-10 h-10 rounded-xl bg-${color}/10 flex items-center justify-center`}>
+            <Icon className={`h-5 w-5 text-${color}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RankedList({ items, formatValue, colorClass }: { items: { name: string; value: number }[]; formatValue: (v: number) => string; colorClass: string }) {
+  if (items.length === 0) return <p className="text-sm text-muted-foreground text-center py-6">Sin datos</p>;
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center justify-between py-1.5">
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-bold ${colorClass} w-5`}>{i + 1}</span>
+            <span className="text-sm font-medium">{item.name}</span>
+          </div>
+          <span className="text-sm font-semibold tabular-nums">{formatValue(item.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyChart() {
+  return (
+    <div className="h-[250px] flex items-center justify-center text-sm text-muted-foreground">
+      Sin datos disponibles
     </div>
   );
 }

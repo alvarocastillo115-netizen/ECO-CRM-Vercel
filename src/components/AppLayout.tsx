@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { path: "/", label: "Kanban", icon: KanbanSquare, adminOnly: false },
+  { path: "/calendar", label: "Calendario", icon: CalendarDays, adminOnly: false },
+  { path: "/clients", label: "Clientes", icon: Contact, adminOnly: true },
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
   { path: "/settings", label: "Configuración", icon: Settings, adminOnly: true },
 ];
