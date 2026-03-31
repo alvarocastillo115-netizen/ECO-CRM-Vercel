@@ -231,7 +231,7 @@ export function CreateTaskDialog({
               <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label>Asignar a</Label>
+              <Label>Personal asignado</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Empleado..." /></SelectTrigger>
                 <SelectContent>
