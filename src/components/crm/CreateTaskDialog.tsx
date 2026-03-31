@@ -74,7 +74,7 @@ export function CreateTaskDialog({
     setNewClientName("");
     setNewClientAddress("");
     setNewClientPhone("");
-    setDescription("");
+    
     setScheduledDate("");
     setSpecifications("");
     setAssignedTo("");
