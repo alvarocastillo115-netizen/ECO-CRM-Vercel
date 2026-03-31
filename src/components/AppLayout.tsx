@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  CalendarDays,
+  Contact,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
