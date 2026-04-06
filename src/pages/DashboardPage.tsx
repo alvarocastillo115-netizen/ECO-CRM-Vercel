@@ -193,47 +193,12 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Pie Chart with Filter */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Participación Porcentual por Servicio</CardTitle>
-            <Select value={pieFilter} onValueChange={(v) => setPieFilter(v as PieFilter)}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="total">Venta Total</SelectItem>
-                <SelectItem value="closed">Venta Cerrada</SelectItem>
-                <SelectItem value="pipeline">Pipeline</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={110}
-                  dataKey="value"
-                  label={({ name, pct }) => `${name} ${pct}%`}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => fmtMoney(v)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <EmptyChart />}
-        </CardContent>
-      </Card>
+      {/* 3 Pie Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <PieCard title="Venta Total" data={pieTotal} fmtMoney={fmtMoney} />
+        <PieCard title="Venta Cerrada" data={pieClosed} fmtMoney={fmtMoney} />
+        <PieCard title="Pipeline" data={piePipeline} fmtMoney={fmtMoney} />
+      </div>
 
       {/* Tendencia Semanal de Ventas */}
       <Card className="shadow-card">
