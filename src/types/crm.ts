@@ -52,11 +52,11 @@ export interface Profile {
 export type AppRole = "admin" | "employee";
 
 export const STATUS_COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
-  { id: "To-Do", title: "To-Do", color: "hsl(215, 15%, 60%)" },
-  { id: "In Progress", title: "In Progress", color: "hsl(215, 55%, 24%)" },
-  { id: "Completed", title: "Completed", color: "hsl(153, 83%, 30%)" },
-  { id: "Keep an Eye", title: "Keep an Eye", color: "hsl(38, 92%, 50%)" },
-  { id: "Need Revision", title: "Need Revision", color: "hsl(0, 72%, 51%)" },
+  { id: "To-Do", title: "Por Hacer", color: "hsl(215, 15%, 60%)" },
+  { id: "In Progress", title: "En Progreso", color: "hsl(215, 55%, 24%)" },
+  { id: "Completed", title: "Completado", color: "hsl(153, 83%, 30%)" },
+  { id: "Keep an Eye", title: "En Seguimiento", color: "hsl(38, 92%, 50%)" },
+  { id: "Need Revision", title: "Necesita Revisión", color: "hsl(0, 72%, 51%)" },
 ];
 
 export const CATEGORY_ICONS: Record<string, string> = {
