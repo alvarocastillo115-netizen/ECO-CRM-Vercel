@@ -324,3 +324,36 @@ function EmptyChart() {
     </div>
   );
 }
+
+function PieCard({ title, data, fmtMoney }: { title: string; data: { name: string; value: number; pct: number }[]; fmtMoney: (v: number) => string }) {
+  return (
+    <Card className="shadow-card">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                dataKey="value"
+                label={({ name, pct }) => `${name} ${pct}%`}
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number) => fmtMoney(v)} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : <EmptyChart />}
+      </CardContent>
+    </Card>
+  );
+}
