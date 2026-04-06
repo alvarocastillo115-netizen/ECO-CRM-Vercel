@@ -51,7 +51,7 @@ export default function DashboardPage() {
       : serviceData.slice().reverse().slice(0, 5);
 
     // Pie chart data per filter
-    const buildPieData = (filter: PieFilter) => {
+    const buildPieData = (filter: "total" | "closed" | "pipeline") => {
       const subset = filter === "total" ? tasks
         : filter === "closed" ? completed
         : pipeline;
