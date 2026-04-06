@@ -129,7 +129,9 @@ export default function DashboardPage() {
   }
 
   const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-  const pieData = stats.buildPieData(pieFilter);
+  const pieTotal = stats.buildPieData("total");
+  const pieClosed = stats.buildPieData("closed");
+  const piePipeline = stats.buildPieData("pipeline");
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
