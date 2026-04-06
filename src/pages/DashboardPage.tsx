@@ -23,7 +23,7 @@ const CHART_COLORS = [
 
 export default function DashboardPage() {
   const { tasks, loading } = useCrmData();
-  const [pieFilter, setPieFilter] = useState<PieFilter>("closed");
+  
 
   const stats = useMemo(() => {
     const completed = tasks.filter((t) => t.status === "Completed");
