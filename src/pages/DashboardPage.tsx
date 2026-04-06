@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown, CalendarClock } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
@@ -19,11 +19,11 @@ const CHART_COLORS = [
   "hsl(15, 80%, 55%)",
 ];
 
-type PieFilter = "total" | "closed" | "pipeline";
+
 
 export default function DashboardPage() {
   const { tasks, loading } = useCrmData();
-  const [pieFilter, setPieFilter] = useState<PieFilter>("closed");
+  
 
   const stats = useMemo(() => {
     const completed = tasks.filter((t) => t.status === "Completed");
@@ -51,7 +51,7 @@ export default function DashboardPage() {
       : serviceData.slice().reverse().slice(0, 5);
 
     // Pie chart data per filter
-    const buildPieData = (filter: PieFilter) => {
+    const buildPieData = (filter: "total" | "closed" | "pipeline") => {
       const subset = filter === "total" ? tasks
         : filter === "closed" ? completed
         : pipeline;
@@ -129,7 +129,9 @@ export default function DashboardPage() {
   }
 
   const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-  const pieData = stats.buildPieData(pieFilter);
+  const pieTotal = stats.buildPieData("total");
+  const pieClosed = stats.buildPieData("closed");
+  const piePipeline = stats.buildPieData("pipeline");
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -191,47 +193,12 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Pie Chart with Filter */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Participación Porcentual por Servicio</CardTitle>
-            <Select value={pieFilter} onValueChange={(v) => setPieFilter(v as PieFilter)}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="total">Venta Total</SelectItem>
-                <SelectItem value="closed">Venta Cerrada</SelectItem>
-                <SelectItem value="pipeline">Pipeline</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={110}
-                  dataKey="value"
-                  label={({ name, pct }) => `${name} ${pct}%`}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => fmtMoney(v)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <EmptyChart />}
-        </CardContent>
-      </Card>
+      {/* 3 Pie Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <PieCard title="Venta Total" data={pieTotal} fmtMoney={fmtMoney} />
+        <PieCard title="Venta Cerrada" data={pieClosed} fmtMoney={fmtMoney} />
+        <PieCard title="Pipeline" data={piePipeline} fmtMoney={fmtMoney} />
+      </div>
 
       {/* Tendencia Semanal de Ventas */}
       <Card className="shadow-card">
@@ -355,5 +322,38 @@ function EmptyChart() {
     <div className="h-[250px] flex items-center justify-center text-sm text-muted-foreground">
       Sin datos disponibles
     </div>
+  );
+}
+
+function PieCard({ title, data, fmtMoney }: { title: string; data: { name: string; value: number; pct: number }[]; fmtMoney: (v: number) => string }) {
+  return (
+    <Card className="shadow-card">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                dataKey="value"
+                label={({ name, pct }) => `${name} ${pct}%`}
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number) => fmtMoney(v)} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : <EmptyChart />}
+      </CardContent>
+    </Card>
   );
 }
