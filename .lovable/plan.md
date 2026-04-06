@@ -1,93 +1,77 @@
 
 
-## Plan: Calendar View, Clients Page, Dashboard Overhaul & UI Tweaks
+## Plan: Bulk Client Upload, Spanish Labels, Pie Chart Filter & Weekly Scheduled Trend
 
-### Summary
-Add a Calendar page, a Clients management page, revamp the Dashboard with 9 specific metrics, and make several UI label/field changes across task forms.
+### 1. Bulk Client Upload via Excel (`ClientsPage.tsx`)
 
----
+Add an "Importar Excel" button next to "Nuevo Cliente" that:
+- Opens a file input accepting `.xlsx` and `.csv` files
+- Parses the file client-side using the `xlsx` library (SheetJS)
+- Expects columns: **Nombre**, **Sucursal**, **Dirección**, **Teléfono** (matching the `clients` table fields)
+- Shows a preview table of parsed rows before confirming import
+- On confirm, bulk-inserts all rows into `clients` via Supabase
+- Shows a toast with success count and any errors
 
-### 1. Database Changes
-
-**Add `branch` column to `clients` table** (migration):
-```sql
-ALTER TABLE public.clients ADD COLUMN branch text NOT NULL DEFAULT '';
-```
-
-No other schema changes needed — all other data already exists.
+**New dependency**: `xlsx` (SheetJS) for parsing Excel files client-side.
 
 ---
 
-### 2. New Pages & Routes
+### 2. Translate All Labels to Spanish (except Kanban, Pipeline, Dashboard)
 
-**A. Calendar Page (`src/pages/CalendarPage.tsx`)**
-- Full-page calendar view (month grid) showing tasks by their `scheduled_date`
-- Each day cell shows task cards (client name + service badges)
-- Click a day to see task list; click a task to open `TaskDetailDialog`
-- Uses existing `useCrmData` hook
-- Navigation: add "Calendario" to sidebar (visible to all roles)
+Audit and update labels across all pages:
 
-**B. Clients Page (`src/pages/ClientsPage.tsx`)**
-- Table/list of all clients with columns: Name, Branch, Address, Phone
-- "New Client" button opens inline form or dialog
-- Click a client row to edit (name, branch, address, phone)
-- Admin-only page
-- Navigation: add "Clientes" to sidebar
-
----
-
-### 3. UI Label & Field Changes
-
-**A. Remove "Descripción" field from task dialogs:**
-- `CreateTaskDialog.tsx`: Remove the description `<Textarea>` block
-- `TaskDetailDialog.tsx`: Remove the description `<Textarea>` block
-- Keep `specifications` field only
-
-**B. Rename "Asignar a" → "Personal asignado":**
-- `CreateTaskDialog.tsx`: Change label text
-- `TaskDetailDialog.tsx`: Change label text
-
-**C. Update `Client` type** in `src/types/crm.ts` to include `branch: string`
-
-**D. Update `CreateTaskDialog`** client creation form to include "Sucursal" field
+- **`AppLayout.tsx`**: Keep "Kanban", "Dashboard" as-is. Already has "Calendario", "Clientes", "Configuración" in Spanish.
+- **`KanbanPage.tsx`**: Title stays "Tablero Kanban". Already mostly Spanish.
+- **`STATUS_COLUMNS` in `crm.ts`**: Keep English status IDs but change display titles:
+  - "To-Do" → "Por Hacer"
+  - "In Progress" → "En Progreso"
+  - "Completed" → "Completado"
+  - "Keep an Eye" → "En Seguimiento"
+  - "Need Revision" → "Necesita Revisión"
+- **`DashboardPage.tsx`**: "Pipeline" stays. Chart titles, axis labels, tooltips all in Spanish (mostly already done).
+- **`TaskDetailDialog.tsx`**: "Estado", "Servicios y montos" — already Spanish. Date format to Spanish locale.
+- **`SettingsPage.tsx`**: Already Spanish.
+- **`CalendarPage.tsx`**: Already Spanish.
 
 ---
 
-### 4. Dashboard Overhaul (`src/pages/DashboardPage.tsx`)
+### 3. Pie Chart with Real Percentages + Filter (`DashboardPage.tsx`)
 
-Complete rewrite with 9 sections:
+Current issue: The pie chart label uses `percent * 100` but recharts `percent` is already 0-1, so it shows the wrong value. Also, the pie only uses completed tasks.
 
-1. **KPI Cards (3):** Ventas Cobradas, Pipeline, Tareas Activas (keep existing style)
-2. **Ventas por Servicio** — Bar chart showing revenue per service category (completed tasks)
-3. **Top 5 Servicios con Mayor Venta** — Horizontal bar chart or ranked list
-4. **Top Bottom 5 Servicios con Menor Venta** — Horizontal bar chart or ranked list
-5. **Pie Chart** — Percentage representation of each service in total revenue
-6. **Tendencia Semanal** — Line chart with weekly revenue (instead of monthly)
-7. **Top 10 Clientes** — Ranked table (expanded from current top 5)
-
-All data derived from existing `useCrmData` tasks/services. Uses `recharts`.
+Changes:
+- **Fix percentage calculation**: Compute real percentages manually (service amount / total * 100) and display as `XX.X%` labels
+- **Add a filter dropdown** with 3 options: "Venta Total" (all tasks), "Venta Cerrada" (Completed), "Pipeline" (To-Do + In Progress)
+- Filter applies to the pie chart data, recalculating percentages based on selected filter
+- Labels show `ServiceName XX.X%` format
 
 ---
 
-### 5. Navigation Updates (`AppLayout.tsx`)
+### 4. Weekly Scheduled Services Trend Chart (`DashboardPage.tsx`)
 
-Add two new nav items:
-- `{ path: "/calendar", label: "Calendario", icon: CalendarDays, adminOnly: false }`
-- `{ path: "/clients", label: "Clientes", icon: Contact, adminOnly: true }`
+Add a new chart: **"Tendencia Semanal de Servicios Agendados"**
 
-Add routes in `App.tsx` for `/calendar` and `/clients`.
+- Groups tasks by the **`scheduled_date`** field (not `created_at`)
+- Counts the number of tasks (or services) scheduled per week
+- Displays as a Line or Bar chart with week labels
+- Shows last 12 weeks
+- X-axis: week start date, Y-axis: count of scheduled services
 
 ---
 
 ### Files Modified
-- `src/types/crm.ts` — add `branch` to Client
-- `src/hooks/useCrmData.ts` — update createClient to include branch
-- `src/components/AppLayout.tsx` — add nav items
-- `src/App.tsx` — add routes
-- `src/components/crm/CreateTaskDialog.tsx` — remove description, add branch, rename label
-- `src/components/crm/TaskDetailDialog.tsx` — remove description, rename label
-- `src/pages/DashboardPage.tsx` — full rewrite with 9 metrics
-- **New:** `src/pages/CalendarPage.tsx`
-- **New:** `src/pages/ClientsPage.tsx`
-- **Migration:** add `branch` column to clients
+
+| File | Changes |
+|---|---|
+| `src/pages/ClientsPage.tsx` | Add bulk import button, file parsing, preview dialog |
+| `src/types/crm.ts` | Update `STATUS_COLUMNS` display titles to Spanish |
+| `src/pages/DashboardPage.tsx` | Fix pie chart %, add filter dropdown, add weekly scheduled trend chart |
+| `package.json` | Add `xlsx` dependency |
+
+### Technical Details
+
+- **Excel parsing**: Uses `xlsx` (SheetJS) library to read `.xlsx`/`.csv` files in-browser. Maps column headers to database fields. Validates required `name` field before insert.
+- **Pie chart fix**: Instead of relying on recharts' built-in `percent` prop, pre-calculate `(serviceValue / totalValue * 100)` and pass as a data field. The label renderer uses this pre-calculated value.
+- **Filter state**: A `useState` with values `"total" | "closed" | "pipeline"` controls which task subset feeds the pie chart computation.
+- **Weekly scheduled trend**: Uses `date-fns` `startOfWeek` on each task's `scheduled_date`, groups and counts per week, renders as a `BarChart`.
 
