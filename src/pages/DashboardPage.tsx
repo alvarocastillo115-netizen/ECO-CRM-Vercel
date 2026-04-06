@@ -1,13 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown, CalendarClock } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend,
 } from "recharts";
-import { format, parseISO, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import { format, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 
@@ -18,8 +19,11 @@ const CHART_COLORS = [
   "hsl(15, 80%, 55%)",
 ];
 
+type PieFilter = "total" | "closed" | "pipeline";
+
 export default function DashboardPage() {
   const { tasks, loading } = useCrmData();
+  const [pieFilter, setPieFilter] = useState<PieFilter>("closed");
 
   const stats = useMemo(() => {
     const completed = tasks.filter((t) => t.status === "Completed");
@@ -29,7 +33,7 @@ export default function DashboardPage() {
     const totalRevenue = completed.reduce((s, t) => s + Number(t.total_amount), 0);
     const pipelineValue = pipeline.reduce((s, t) => s + Number(t.total_amount), 0);
 
-    // Revenue by service category (from completed tasks)
+    // Revenue by service category (completed)
     const revByCat: Record<string, number> = {};
     completed.forEach((t) => {
       t.services?.forEach((s) => {
@@ -37,23 +41,38 @@ export default function DashboardPage() {
         revByCat[catName] = (revByCat[catName] || 0) + Number(s.amount_allocated);
       });
     });
-
     const serviceData = Object.entries(revByCat)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-
-    const totalServiceRev = serviceData.reduce((s, d) => s + d.value, 0);
-    const pieData = serviceData.map((d) => ({
-      ...d,
-      percent: totalServiceRev > 0 ? ((d.value / totalServiceRev) * 100).toFixed(1) : "0",
-    }));
 
     const top5Services = serviceData.slice(0, 5);
     const bottom5Services = serviceData.length > 5
       ? serviceData.slice(-5).reverse()
       : serviceData.slice().reverse().slice(0, 5);
 
-    // Weekly trend (last 12 weeks)
+    // Pie chart data per filter
+    const buildPieData = (filter: PieFilter) => {
+      const subset = filter === "total" ? tasks
+        : filter === "closed" ? completed
+        : pipeline;
+      const catMap: Record<string, number> = {};
+      subset.forEach((t) => {
+        t.services?.forEach((s) => {
+          const catName = s.category?.name || "Otro";
+          catMap[catName] = (catMap[catName] || 0) + Number(s.amount_allocated);
+        });
+      });
+      const total = Object.values(catMap).reduce((s, v) => s + v, 0);
+      return Object.entries(catMap)
+        .map(([name, value]) => ({
+          name,
+          value,
+          pct: total > 0 ? Number(((value / total) * 100).toFixed(1)) : 0,
+        }))
+        .sort((a, b) => b.value - a.value);
+    };
+
+    // Weekly trend (completed, by created_at)
     const weeklyMap: Record<string, number> = {};
     completed.forEach((t) => {
       const weekStart = format(startOfWeek(parseISO(t.created_at), { weekStartsOn: 1 }), "yyyy-MM-dd");
@@ -65,6 +84,23 @@ export default function DashboardPage() {
       .map(([week, value]) => ({
         week: format(parseISO(week), "dd MMM", { locale: es }),
         value,
+      }));
+
+    // Weekly scheduled trend (by scheduled_date)
+    const scheduledMap: Record<string, number> = {};
+    tasks.forEach((t) => {
+      if (!t.scheduled_date) return;
+      const weekStart = format(startOfWeek(parseISO(t.scheduled_date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+      // Count services scheduled
+      const count = t.services?.length || 1;
+      scheduledMap[weekStart] = (scheduledMap[weekStart] || 0) + count;
+    });
+    const scheduledData = Object.entries(scheduledMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12)
+      .map(([week, count]) => ({
+        week: format(parseISO(week), "dd MMM", { locale: es }),
+        count,
       }));
 
     // Top 10 clients
@@ -79,8 +115,8 @@ export default function DashboardPage() {
 
     return {
       totalRevenue, pipelineValue, activeCount: active.length,
-      serviceData, pieData, top5Services, bottom5Services,
-      weeklyData, topClients,
+      serviceData, top5Services, bottom5Services,
+      buildPieData, weeklyData, scheduledData, topClients,
     };
   }, [tasks]);
 
@@ -93,6 +129,7 @@ export default function DashboardPage() {
   }
 
   const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  const pieData = stats.buildPieData(pieFilter);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -101,14 +138,14 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-0.5">Insights financieros y operativos</p>
       </div>
 
-      {/* 1-3: KPI Cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard label="Ventas Cobradas" value={fmtMoney(stats.totalRevenue)} icon={DollarSign} color="primary" />
         <KpiCard label="Pipeline" value={fmtMoney(stats.pipelineValue)} icon={TrendingUp} color="info" />
         <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="warning" />
       </div>
 
-      {/* 4: Ventas por Servicio (Bar Chart) */}
+      {/* Ventas por Servicio */}
       <Card className="shadow-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -130,7 +167,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* 5 & 6: Top/Bottom Services */}
+      {/* Top/Bottom Services */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-card">
           <CardHeader className="pb-2">
@@ -142,7 +179,6 @@ export default function DashboardPage() {
             <RankedList items={stats.top5Services} formatValue={fmtMoney} colorClass="text-emerald-600" />
           </CardContent>
         </Card>
-
         <Card className="shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -155,25 +191,37 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* 7: Pie Chart */}
+      {/* Pie Chart with Filter */}
       <Card className="shadow-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Representación Porcentual por Servicio</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Participación Porcentual por Servicio</CardTitle>
+            <Select value={pieFilter} onValueChange={(v) => setPieFilter(v as PieFilter)}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="total">Venta Total</SelectItem>
+                <SelectItem value="closed">Venta Cerrada</SelectItem>
+                <SelectItem value="pipeline">Pipeline</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          {stats.pieData.length > 0 ? (
+          {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={stats.pieData}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={65}
                   outerRadius={110}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                  label={({ name, pct }) => `${name} ${pct}%`}
                 >
-                  {stats.pieData.map((_, i) => (
+                  {pieData.map((_, i) => (
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -185,7 +233,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* 8: Tendencia Semanal */}
+      {/* Tendencia Semanal de Ventas */}
       <Card className="shadow-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Tendencia Semanal de Ventas</CardTitle>
@@ -205,7 +253,29 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* 9: Top 10 Clientes */}
+      {/* Tendencia Semanal de Servicios Agendados */}
+      <Card className="shadow-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarClock className="h-4 w-4" /> Tendencia Semanal de Servicios Agendados
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.scheduledData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={stats.scheduledData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip formatter={(v: number) => `${v} servicios`} />
+                <Bar dataKey="count" fill="hsl(270, 60%, 50%)" radius={[4, 4, 0, 0]} name="Servicios agendados" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <EmptyChart />}
+        </CardContent>
+      </Card>
+
+      {/* Top 10 Clientes */}
       <Card className="shadow-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
