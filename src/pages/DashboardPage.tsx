@@ -19,7 +19,7 @@ const CHART_COLORS = [
   "hsl(15, 80%, 55%)",
 ];
 
-type PieFilter = "total" | "closed" | "pipeline";
+
 
 export default function DashboardPage() {
   const { tasks, loading } = useCrmData();
