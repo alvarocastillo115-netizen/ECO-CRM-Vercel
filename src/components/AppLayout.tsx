@@ -12,15 +12,19 @@ import {
   User,
   CalendarDays,
   Contact,
+  DollarSign,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Kanban", icon: KanbanSquare, adminOnly: false },
+  { path: "/", label: "Servicios", icon: KanbanSquare, adminOnly: false },
   { path: "/calendar", label: "Calendario", icon: CalendarDays, adminOnly: false },
-  { path: "/clients", label: "Clientes", icon: Contact, adminOnly: true },
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
+  { path: "/sales-history", label: "Historial de Ventas", icon: History, adminOnly: true },
+  { path: "/commissions", label: "Comisiones", icon: DollarSign, adminOnly: true },
+  { path: "/clients", label: "Clientes", icon: Contact, adminOnly: true },
   { path: "/settings", label: "Configuración", icon: Settings, adminOnly: true },
 ];
 
@@ -39,15 +43,19 @@ export function AppLayout() {
         )}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary flex-shrink-0">
-            <Leaf className="h-4 w-4 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <span className="text-sm font-bold text-secondary-foreground truncate">
-              EcoSolutions
-            </span>
-          )}
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border min-h-[73px]">
+          <Link to="/" className="flex items-center gap-3 overflow-hidden">
+            <img 
+              src="https://ecosolutionssv.com/wp-content/uploads/2025/03/logo-de-eco-solutions-tranparente-letras-blancas-300x300.png" 
+              alt="logo-de-eco-solutions-tranparente-letras-blancas" 
+              className={cn("h-8 object-contain transition-all duration-200", collapsed ? "w-8" : "w-8")} 
+            />
+            {!collapsed && (
+              <span className="text-sm font-bold text-secondary-foreground truncate">
+                EcoSolutions
+              </span>
+            )}
+          </Link>
         </div>
 
         {/* Navigation */}

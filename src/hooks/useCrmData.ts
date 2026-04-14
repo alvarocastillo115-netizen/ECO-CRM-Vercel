@@ -8,6 +8,7 @@ export function useCrmData() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientsWithDates, setClientsWithDates] = useState<any[]>([]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -23,7 +24,7 @@ export function useCrmData() {
     const catsData = (catsRes.data || []) as Category[];
     const servicesData = (servicesRes.data || []) as any[];
 
-    const enrichedTasks = ((tasksRes.data || []) as CrmTask[]).map((task) => ({
+    const enrichedTasks = (((tasksRes.data || []) as any) as CrmTask[]).map((task) => ({
       ...task,
       client: clientsData.find((c) => c.id === task.client_id),
       services: servicesData
@@ -37,8 +38,23 @@ export function useCrmData() {
         })),
     }));
 
+    const lastServiceMap: Record<string, string> = {};
+    enrichedTasks.forEach(t => {
+      if (t.status === "Servicio finalizado" && t.service_date) {
+        if (!lastServiceMap[t.client_id] || t.service_date > lastServiceMap[t.client_id]) {
+          lastServiceMap[t.client_id] = t.service_date;
+        }
+      }
+    });
+
+    const cWithDates = clientsData.map(c => ({
+      ...c,
+      last_service_date: lastServiceMap[c.id] || null
+    }));
+
     setTasks(enrichedTasks);
     setClients(clientsData);
+    setClientsWithDates(cWithDates);
     setCategories(catsData);
     setEmployees((profilesRes.data || []) as Profile[]);
     setLoading(false);
@@ -52,10 +68,12 @@ export function useCrmData() {
     async (data: {
       client_id: string;
       description: string;
-      scheduled_date: string | null;
+      inspection_date: string | null;
+      service_date: string | null;
       specifications: string;
       assigned_to_user_id: string | null;
       services: { category_id: string; amount_allocated: number }[];
+      status?: TaskStatus;
     }) => {
       const total = data.services.reduce((sum, s) => sum + s.amount_allocated, 0);
       const { data: newTask, error } = await supabase
@@ -63,11 +81,12 @@ export function useCrmData() {
         .insert({
           client_id: data.client_id,
           description: data.description,
-          scheduled_date: data.scheduled_date,
+          inspection_date: data.inspection_date,
+          service_date: data.service_date,
           specifications: data.specifications,
           assigned_to_user_id: data.assigned_to_user_id,
           total_amount: total,
-          status: "To-Do",
+          status: data.status || "Primer contacto",
         })
         .select()
         .single();
@@ -93,14 +112,9 @@ export function useCrmData() {
   const updateTaskStatus = useCallback(
     async (
       taskId: string,
-      status: TaskStatus,
-      keepAnEyeData?: { keep_an_eye_date: string; keep_an_eye_period_months: number }
+      status: TaskStatus
     ) => {
       const updateData: any = { status };
-      if (status === "Keep an Eye" && keepAnEyeData) {
-        updateData.keep_an_eye_date = keepAnEyeData.keep_an_eye_date;
-        updateData.keep_an_eye_period_months = keepAnEyeData.keep_an_eye_period_months;
-      }
       const { error } = await supabase.from("crm_tasks").update(updateData).eq("id", taskId);
       if (!error) await fetchAll();
       return { error: error?.message || null };
@@ -113,12 +127,11 @@ export function useCrmData() {
       taskId: string,
       data: {
         description?: string;
-        scheduled_date?: string | null;
+        inspection_date?: string | null;
+        service_date?: string | null;
         specifications?: string;
         assigned_to_user_id?: string | null;
         status?: TaskStatus;
-        keep_an_eye_date?: string | null;
-        keep_an_eye_period_months?: number | null;
         services?: { category_id: string; amount_allocated: number }[];
       }
     ) => {
@@ -152,7 +165,7 @@ export function useCrmData() {
   );
 
   const createClient = useCallback(
-    async (data: { name: string; address: string; phone: string; branch?: string }) => {
+    async (data: { name: string; address: string; phone: string; branch?: string; is_fixed?: boolean }) => {
       const { data: newClient, error } = await supabase
         .from("clients")
         .insert(data)
@@ -179,6 +192,18 @@ export function useCrmData() {
     [fetchAll]
   );
 
+  const updateCategory = useCallback(async (id: string, name: string) => {
+    const { error } = await supabase.from("categories").update({ name }).eq("id", id);
+    if (!error) await fetchAll();
+    return { error: error?.message || null };
+  }, [fetchAll]);
+
+  const deleteCategory = useCallback(async (id: string) => {
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (!error) await fetchAll();
+    return { error: error?.message || null };
+  }, [fetchAll]);
+
   const getTasksByStatus = useCallback(
     (status: TaskStatus) => tasks.filter((t) => t.status === status),
     [tasks]
@@ -195,7 +220,10 @@ export function useCrmData() {
     updateTask,
     createClient,
     createCategory,
+    updateCategory,
+    deleteCategory,
     getTasksByStatus,
     refetch: fetchAll,
+    clientsWithDates,
   };
 }

@@ -1,4 +1,4 @@
-export type TaskStatus = "To-Do" | "In Progress" | "Completed" | "Keep an Eye" | "Need Revision";
+export type TaskStatus = "Primer contacto" | "Inspeccion" | "Cotizacion" | "Servicio Agendado" | "Servicio en proceso" | "Servicio finalizado";
 
 export interface CrmTask {
   id: string;
@@ -6,10 +6,13 @@ export interface CrmTask {
   description: string;
   status: TaskStatus;
   created_at: string;
-  scheduled_date: string | null;
+  inspection_date: string | null;
+  service_date: string | null;
   total_amount: number;
   keep_an_eye_date: string | null;
   keep_an_eye_period_months: number | null;
+  inspection_time?: string;
+  service_time?: "AM" | "PM" | string;
   assigned_to_user_id: string | null;
   specifications: string;
   updated_at: string;
@@ -22,6 +25,7 @@ export interface Client {
   id: string;
   name: string;
   address: string;
+  is_fixed?: boolean;
   phone: string;
   branch: string;
   created_at: string;
@@ -52,11 +56,12 @@ export interface Profile {
 export type AppRole = "admin" | "employee";
 
 export const STATUS_COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
-  { id: "To-Do", title: "Por Hacer", color: "hsl(215, 15%, 60%)" },
-  { id: "In Progress", title: "En Progreso", color: "hsl(215, 55%, 24%)" },
-  { id: "Completed", title: "Completado", color: "hsl(153, 83%, 30%)" },
-  { id: "Keep an Eye", title: "En Seguimiento", color: "hsl(38, 92%, 50%)" },
-  { id: "Need Revision", title: "Necesita Revisión", color: "hsl(0, 72%, 51%)" },
+  { id: "Primer contacto", title: "Primer Contacto", color: "#FF0000" },
+  { id: "Inspeccion", title: "Inspección", color: "#FF6600" },
+  { id: "Cotizacion", title: "Cotización", color: "#36FF7D" },
+  { id: "Servicio Agendado", title: "Servicio Agendado", color: "#003300" },
+  { id: "Servicio en proceso", title: "Servicio en Proceso", color: "#000066" },
+  { id: "Servicio finalizado", title: "Servicio Finalizado", color: "#256764" },
 ];
 
 export const CATEGORY_ICONS: Record<string, string> = {

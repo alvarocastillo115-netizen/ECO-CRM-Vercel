@@ -11,6 +11,8 @@ import CalendarPage from "@/pages/CalendarPage";
 import ClientsPage from "@/pages/ClientsPage";
 import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
+import CommissionsPage from "@/pages/CommissionsPage";
+import SalesHistoryPage from "@/pages/SalesHistoryPage";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -63,6 +65,22 @@ const App = () => (
                 element={
                   <ProtectedRoute adminOnly>
                     <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/commissions"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <CommissionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-history"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <SalesHistoryPage />
                   </ProtectedRoute>
                 }
               />

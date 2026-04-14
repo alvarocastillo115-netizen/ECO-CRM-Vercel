@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, DollarSign, Loader2 } from "lucide-react";
-import type { Category, Client, Profile, TaskStatus } from "@/types/crm";
+import { Plus, DollarSign, Loader2, Search, Check, ChevronDown } from "lucide-react";
+import { type Category, type Client, type Profile, type TaskStatus, STATUS_COLUMNS } from "@/types/crm";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateTaskDialogProps {
@@ -20,10 +20,14 @@ interface CreateTaskDialogProps {
   onCreateTask: (data: {
     client_id: string;
     description: string;
-    scheduled_date: string | null;
+    inspection_date: string | null;
+    inspection_time?: string;
+    service_date: string | null;
+    service_time?: string;
     specifications: string;
     assigned_to_user_id: string | null;
     services: { category_id: string; amount_allocated: number }[];
+    status: TaskStatus;
   }) => Promise<{ error: string | null }>;
   onCreateClient: (data: { name: string; address: string; phone: string; branch?: string }) => Promise<{ data: Client | null; error: string | null }>;
 }
@@ -39,17 +43,37 @@ export function CreateTaskDialog({
   onCreateClient,
 }: CreateTaskDialogProps) {
   const [clientId, setClientId] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [newClientMode, setNewClientMode] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientBranch, setNewClientBranch] = useState("");
+  const clientSearchRef = useRef<HTMLInputElement>(null);
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return clients;
+    const q = clientSearch.toLowerCase();
+    return clients.filter(c => c.name.toLowerCase().includes(q));
+  }, [clients, clientSearch]);
   
-  const [scheduledDate, setScheduledDate] = useState("");
+  const [inspectionDate, setInspectionDate] = useState("");
+  const [inspectionTime, setInspectionTime] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
+  const [serviceTime, setServiceTime] = useState("");
   const [specifications, setSpecifications] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<TaskStatus>(defaultStatus);
+
+  useEffect(() => {
+    setStatus(defaultStatus);
+  }, [defaultStatus, open]);
+
+  const selectedClient = clients.find(c => c.id === clientId);
+  const isFixedClient = selectedClient?.is_fixed || false;
 
   const total = useMemo(
     () => Object.values(selectedCategories).reduce((s, v) => s + (v || 0), 0),
@@ -71,15 +95,19 @@ export function CreateTaskDialog({
 
   const resetForm = () => {
     setClientId("");
+    setClientSearch("");
     setNewClientMode(false);
     setNewClientName("");
     setNewClientAddress("");
     setNewClientPhone("");
-    
-    setScheduledDate("");
+    setInspectionDate("");
+    setInspectionTime("");
+    setServiceDate("");
+    setServiceTime("");
     setSpecifications("");
     setAssignedTo("");
     setSelectedCategories({});
+    setStatus(defaultStatus);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,10 +150,14 @@ export function CreateTaskDialog({
     const { error } = await onCreateTask({
       client_id: finalClientId,
       description: "",
-      scheduled_date: scheduledDate || null,
+      inspection_date: inspectionDate || null,
+      inspection_time: inspectionTime,
+      service_date: serviceDate || null,
+      service_time: serviceTime,
       specifications,
       assigned_to_user_id: assignedTo || null,
       services,
+      status,
     });
 
     if (error) {
@@ -166,14 +198,82 @@ export function CreateTaskDialog({
                 <Input placeholder="Teléfono" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
               </div>
             ) : (
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar cliente..." /></SelectTrigger>
-                <SelectContent>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                {/* Searchable client combobox */}
+                <div
+                  className="flex items-center border rounded-md px-3 h-9 gap-2 cursor-pointer bg-white hover:border-primary/50 transition-colors"
+                  onClick={() => { setClientDropdownOpen(true); setTimeout(() => clientSearchRef.current?.focus(), 50); }}
+                >
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input
+                    ref={clientSearchRef}
+                    value={clientSearch}
+                    onChange={(e) => { setClientSearch(e.target.value); setClientDropdownOpen(true); }}
+                    onFocus={() => setClientDropdownOpen(true)}
+                    placeholder={clientId ? (clients.find(c => c.id === clientId)?.name ?? "Seleccionar cliente...") : "Buscar cliente..."}
+                    className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                    style={{ color: clientId && !clientSearch ? 'inherit' : undefined }}
+                  />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </div>
+                {clientDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => { setClientDropdownOpen(false); setClientSearch(""); }} />
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {filteredClients.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</div>
+                      ) : (
+                        filteredClients.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-primary/5 transition-colors ${
+                              c.id === clientId ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                            }`}
+                            onClick={() => {
+                              setClientId(c.id);
+                              setClientSearch("");
+                              setClientDropdownOpen(false);
+                            }}
+                          >
+                            <span>{c.name}</span>
+                            {c.id === clientId && <Check className="h-3.5 w-3.5 text-primary" />}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            
+            {isFixedClient && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-800 p-2 text-sm rounded mt-3 flex items-start gap-2">
+                <span className="text-orange-600 mt-0.5">★</span>
+                <div>
+                  <p className="font-semibold">Cliente Fijo detectado.</p>
+                  <p className="text-xs opacity-90">Puedes agendar directamente el servicio seleccionando el estatus adecuado.</p>
+                </div>
+              </div>
+            )}
+            
+            {clientId && !newClientMode && (
+              <div className="mt-3">
+                <Label>Estatus inicial</Label>
+                <Select value={status} onValueChange={(val: TaskStatus) => setStatus(val)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_COLUMNS.map(col => (
+                      <SelectItem key={col.id} value={col.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: col.color }} />
+                          {col.title}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
 
@@ -206,6 +306,7 @@ export function CreateTaskDialog({
                           placeholder="0.00"
                           value={selectedCategories[cat.id] || ""}
                           onChange={(e) => setAmount(cat.id, parseFloat(e.target.value) || 0)}
+                          onWheel={(e) => (e.target as HTMLElement).blur()}
                           className="pl-6 h-8 text-sm"
                         />
                       </div>
@@ -227,12 +328,8 @@ export function CreateTaskDialog({
             <Textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
           </div>
 
-          {/* Date + Assigned */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Fecha programada</Label>
-              <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className="mt-1" />
-            </div>
+          {/* Assigned & Dates Layout */}
+          <div className="space-y-4 pt-2 border-t mt-2">
             <div>
               <Label>Personal asignado</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
@@ -244,6 +341,32 @@ export function CreateTaskDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {status === "Inspeccion" && (
+              <div className="grid grid-cols-2 gap-3 bg-[#FF6600]/5 p-3 rounded-lg border border-[#FF6600]/20">
+                <div>
+                  <Label className="text-[#e65c00]">Fecha de cotización / inspección</Label>
+                  <Input type="date" value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[#e65c00]">Hora de cotización / inspección</Label>
+                  <Input type="time" value={inspectionTime} onChange={(e) => setInspectionTime(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                </div>
+              </div>
+            )}
+
+            {status === "Servicio Agendado" && (
+              <div className="grid grid-cols-2 gap-3 bg-[#09B549]/5 p-3 rounded-lg border border-[#09B549]/20">
+                <div>
+                  <Label className="text-[#09B549]">Fecha de servicio</Label>
+                  <Input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[#09B549]">Hora de servicio</Label>
+                  <Input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                </div>
+              </div>
+            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={submitting}>

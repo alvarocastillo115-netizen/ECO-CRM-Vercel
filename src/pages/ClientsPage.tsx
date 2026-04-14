@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
+import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,14 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2, Search, Pencil, Contact, Upload } from "lucide-react";
+import { Plus, Loader2, Search, Pencil, Contact, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Client } from "@/types/crm";
 import * as XLSX from "xlsx";
 
 export default function ClientsPage() {
-  const { clients, loading, createClient, refetch } = useCrmData();
+  const { clientsWithDates: clients, tasks, loading, createClient, refetch } = useCrmData();
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
@@ -53,6 +56,15 @@ export default function ClientsPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { Nombre: "", Sucursal: "", Dirección: "", Teléfono: "" }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    XLSX.writeFile(wb, "plantilla_clientes.xlsx");
+  };
+
   const handleBulkImport = async () => {
     if (!importData) return;
     setImporting(true);
@@ -84,6 +96,10 @@ export default function ClientsPage() {
         </div>
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".xlsx,.csv,.xls" className="hidden" onChange={handleFileSelect} />
+          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            Descargar Plantilla
+          </Button>
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
             <Upload className="h-4 w-4 mr-2" />
             Importar Excel
@@ -108,7 +124,7 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Sucursal</TableHead>
-                <TableHead>Dirección</TableHead>
+                <TableHead>Último Servicio Realizado</TableHead>
                 <TableHead>Teléfono</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -124,9 +140,17 @@ export default function ClientsPage() {
               ) : (
                 filtered.map((client) => (
                   <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEditClient(client)}>
-                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {client.name}
+                      {client.is_fixed && <span className="ml-2 inline-flex items-center text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full font-semibold">★ Fijo</span>}
+                    </TableCell>
                     <TableCell>{client.branch || "—"}</TableCell>
-                    <TableCell>{client.address || "—"}</TableCell>
+                    <TableCell>
+                      {client.last_service_date 
+                        ? new Date(client.last_service_date).toLocaleDateString("es-ES", { day: '2-digit', month: '2-digit', year: 'numeric' })
+                        : "Sin servicios"
+                      }
+                    </TableCell>
                     <TableCell>{client.phone || "—"}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -156,8 +180,13 @@ export default function ClientsPage() {
         open={!!editClient}
         onOpenChange={(open) => !open && setEditClient(null)}
         client={editClient}
+        tasks={tasks as any[]}
         onSave={async (data) => {
-          if (!editClient) return { error: "No client" };
+          if (!editClient) {
+            // This case handles the 'refetch' after delete if we pass dummy data
+            refetch();
+            return { error: null };
+          }
           const { error } = await supabase.from("clients").update(data).eq("id", editClient.id);
           if (error) {
             toast.error(error.message);
@@ -215,25 +244,32 @@ function ClientFormDialog({
   open,
   onOpenChange,
   client,
+  tasks,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   client?: Client | null;
-  onSave: (data: { name: string; address: string; phone: string; branch: string }) => Promise<{ error: string | null }>;
+  tasks?: any[];
+  onSave: (data: { name: string; address: string; phone: string; branch: string; is_fixed: boolean }) => Promise<{ error: string | null }>;
 }) {
   const [name, setName] = useState(client?.name || "");
   const [branch, setBranch] = useState(client?.branch || "");
-  const [address, setAddress] = useState(client?.address || "");
-  const [phone, setPhone] = useState(client?.phone || "");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isFixed, setIsFixed] = useState(client?.is_fixed || false);
   const [saving, setSaving] = useState(false);
+  const { isAdmin } = useAuth();
 
-  useState(() => {
-    setName(client?.name || "");
-    setBranch(client?.branch || "");
-    setAddress(client?.address || "");
-    setPhone(client?.phone || "");
-  });
+  React.useEffect(() => {
+    if (open) {
+      setName(client?.name || "");
+      setBranch(client?.branch || "");
+      setAddress(client?.address || "");
+      setPhone(client?.phone || "");
+      setIsFixed(client?.is_fixed || false);
+    }
+  }, [open, client]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,30 +280,98 @@ function ClientFormDialog({
       branch: branch.trim(),
       address: address.trim(),
       phone: phone.trim(),
+      is_fixed: isFixed,
     });
     if (!error) {
       onOpenChange(false);
-      setName(""); setBranch(""); setAddress(""); setPhone("");
+      setName(""); setBranch(""); setAddress(""); setPhone(""); setIsFixed(false);
     }
     setSaving(false);
   };
 
+  const clientTasks = client && tasks ? tasks.filter(t => t.client_id === client.id).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className={client ? "sm:max-w-[700px] max-h-[90vh] overflow-y-auto" : "sm:max-w-[420px]"}>
         <DialogHeader>
-          <DialogTitle>{client ? "Editar Cliente" : "Nuevo Cliente"}</DialogTitle>
+          <DialogTitle>{client ? "Editar Cliente e Historial" : "Nuevo Cliente"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <div className={client ? "grid grid-cols-1 md:grid-cols-2 gap-6" : ""}>
+          <form onSubmit={handleSubmit} className="space-y-3">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" required /></div>
           <div><Label>Sucursal</Label><Input value={branch} onChange={(e) => setBranch(e.target.value)} className="mt-1" placeholder="Ej: Sede Central" /></div>
           <div><Label>Dirección</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} className="mt-1" /></div>
           <div><Label>Teléfono</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" /></div>
+          <div className="flex items-center gap-2 mt-3 pt-2 border-t">
+            <input type="checkbox" id="is_fixed" checked={isFixed} onChange={(e) => setIsFixed(e.target.checked)} className="h-4 w-4 rounded border-gray-300" />
+            <Label htmlFor="is_fixed" className="font-semibold text-orange-600 flex items-center">★ Marcar como Cliente Fijo</Label>
+          </div>
           <Button type="submit" className="w-full" disabled={saving || !name.trim()}>
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             {client ? "Guardar cambios" : "Crear Cliente"}
           </Button>
+
+          {client && isAdmin && (
+            <Button 
+              type="button" 
+              variant="destructive" 
+              className="w-full mt-2" 
+              disabled={saving}
+              onClick={async () => {
+                if (!window.confirm("¿Estás seguro de eliminar este cliente?")) return;
+                setSaving(true);
+                const { error } = await supabase.from("clients").delete().eq("id", client.id);
+                if (error) {
+                  toast.error("Error al eliminar: " + error.message);
+                } else {
+                  toast.success("Cliente eliminado");
+                  onOpenChange(false);
+                  onSave({ name: "", branch: "", address: "", phone: "", is_fixed: false }); // Trigger refetch hack or just refetch
+                }
+                setSaving(false);
+              }}
+            >
+              Eliminar Cliente
+            </Button>
+          )}
         </form>
+        {client && (
+          <div className="border-l pl-6 flex flex-col h-full bg-slate-50/50 rounded-r-lg">
+            <h4 className="font-semibold text-sm mb-3">Historial de Servicios</h4>
+            <div className="flex-1 overflow-y-auto max-h-[350px] pr-2">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Fecha</TableHead>
+                    <TableHead className="text-xs">Estado</TableHead>
+                    <TableHead className="text-xs text-right">Monto</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientTasks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-xs text-center text-muted-foreground">Sin historial</TableCell>
+                    </TableRow>
+                  ) : (
+                    clientTasks.map((t: any) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {format(new Date(t.created_at), "dd MMM yy")}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium">{t.status}</TableCell>
+                        <TableCell className="text-xs text-right text-emerald-600 font-bold">
+                          ${Number(t.total_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+        </div>
       </DialogContent>
     </Dialog>
   );

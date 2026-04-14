@@ -29,9 +29,12 @@ export function CrmKanbanColumn({
   return (
     <div
       className={cn(
-        "flex flex-col min-w-[280px] w-[280px] flex-shrink-0 rounded-xl transition-colors duration-200 bg-surface",
-        isDragOver && "bg-primary/5"
+        "flex flex-col min-w-[280px] w-[280px] flex-shrink-0 rounded-xl transition-colors duration-200",
+        isDragOver ? "brightness-95" : ""
       )}
+      style={{
+        background: `linear-gradient(to bottom, ${color}66 0%, ${color}05 100%)`
+      }}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -42,8 +45,8 @@ export function CrmKanbanColumn({
       <div className="flex items-center justify-between px-3.5 py-3">
         <div className="flex items-center gap-2.5">
           <span
-            className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-md text-2xs font-semibold tabular-nums"
-            style={{ backgroundColor: color + "18", color }}
+            className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-md text-2xs font-bold tabular-nums"
+            style={{ backgroundColor: `${color}30`, color: color === "#FFF293" || color === "#C9DC92" ? "#666" : color }}
           >
             {tasks.length}
           </span>
@@ -58,7 +61,7 @@ export function CrmKanbanColumn({
       </div>
 
       {/* Cards */}
-      <div className="flex-1 px-2 pb-2 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
+      <div className="flex-1 px-2 pb-2 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] kanban-scroll-area">
         {tasks.map((task) => (
           <div
             key={task.id}
@@ -68,7 +71,7 @@ export function CrmKanbanColumn({
               e.dataTransfer.effectAllowed = "move";
             }}
           >
-            <CrmTaskCard task={task} onClick={() => onTaskClick(task)} />
+            <CrmTaskCard task={task} columnColor={color} onClick={() => onTaskClick(task)} />
           </div>
         ))}
       </div>

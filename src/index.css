@@ -2,69 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    --background: 0 0% 99%;
+    --foreground: 220 7.2% 41.0%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 177 47.1% 27.5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 177 47.1% 27.5%;
 
-    --primary: 153 83% 30%;
+    --primary: 177 47.1% 27.5%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 55% 24%;
+    --secondary: 185 66.3% 16.3%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 47%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 220 7.2% 51.0%;
 
-    --accent: 153 30% 95%;
-    --accent-foreground: 153 83% 25%;
+    --accent: 218 97.3% 56.7%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 92%;
-    --input: 214 20% 92%;
-    --ring: 153 83% 30%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 177 47.1% 27.5%;
 
-    --radius: 0.625rem;
+    --radius: 5px;
 
-    --surface: 210 20% 97%;
-    --surface-foreground: 215 25% 15%;
+    --surface: 0 0% 98%;
+    --surface-foreground: 177 47.1% 27.5%;
 
-    --success: 153 83% 30%;
+    --success: 177 47.1% 27.5%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 215 55% 24%;
+    --info: 218 97.3% 56.7%;
     --info-foreground: 0 0% 100%;
 
-    --emerald: 153 83% 30%;
+    --emerald: 177 47.1% 27.5%;
     --emerald-foreground: 0 0% 100%;
-    --deep-blue: 215 55% 24%;
+    --deep-blue: 185 66.3% 16.3%;
     --deep-blue-foreground: 0 0% 100%;
 
-    --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --shadow-card-hover: 0 10px 25px -5px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.04);
-    --shadow-panel: 0 4px 20px rgba(0,0,0,.06);
+    --shadow-card: 0 14px 31px rgba(0, 26, 87, 0.1);
+    --shadow-card-hover: 0 20px 40px rgba(0, 26, 87, 0.15);
+    --shadow-panel: 0 4px 20px rgba(0, 26, 87, 0.1);
 
-    --sidebar-background: 215 55% 24%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 153 83% 40%;
+    --sidebar-background: 185 66.3% 16.3%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 177 47.1% 27.5%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 55% 30%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 215 45% 30%;
-    --sidebar-ring: 153 83% 40%;
+    --sidebar-accent: 185 60% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 185 66.3% 16.3%;
+    --sidebar-ring: 177 47.1% 27.5%;
   }
 }
 
@@ -75,7 +75,10 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
   }
 }
 
@@ -101,4 +104,19 @@
 
 .animate-pulse-alert {
   animation: pulse-alert 1.2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for kanban that only shows on hover/scroll interaction */
+.kanban-scroll-area::-webkit-scrollbar {
+  width: 6px;
+  background-color: transparent;
+}
+.kanban-scroll-area::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+.kanban-scroll-area:hover::-webkit-scrollbar-thumb, 
+.kanban-scroll-area:focus-within::-webkit-scrollbar-thumb,
+.kanban-scroll-area:active::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
 }
