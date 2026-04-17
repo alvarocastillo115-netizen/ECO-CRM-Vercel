@@ -22,9 +22,9 @@ const NAV_ITEMS = [
   { path: "/", label: "Servicios", icon: KanbanSquare, adminOnly: false },
   { path: "/calendar", label: "Calendario", icon: CalendarDays, adminOnly: false },
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
-  { path: "/sales-history", label: "Historial de Ventas", icon: History, adminOnly: true },
+  { path: "/sales-history", label: "Historial de Ventas", icon: History, adminOnly: false },
   { path: "/commissions", label: "Comisiones", icon: DollarSign, adminOnly: true },
-  { path: "/clients", label: "Clientes", icon: Contact, adminOnly: true },
+  { path: "/clients", label: "Clientes", icon: Contact, adminOnly: false },
   { path: "/settings", label: "Configuración", icon: Settings, adminOnly: true },
 ];
 

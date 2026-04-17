@@ -28,7 +28,7 @@ export default function CommissionsPage() {
   });
 
   const commissionsBySeller = useMemo(() => {
-    const completed = tasks.filter((t) => t.status === "Servicio finalizado");
+    const completed = tasks.filter((t) => t.status === "Servicio completado");
     
     // Filter by date first
     const filteredTasks = completed.filter((t) => {
@@ -37,17 +37,18 @@ export default function CommissionsPage() {
       return isWithinInterval(taskDate, { start: date.from, end: date.to });
     });
 
-    const sellerMap: Record<string, { sellerName: string; totalAmount: number; servicesCount: number; services: Record<string, number> }> = {};
+    const sellerMap: Record<string, { sellerName: string; totalAmount: number; tasksCount: number; servicesCount: number; services: Record<string, number> }> = {};
 
     filteredTasks.forEach(t => {
       const sellerId = t.assigned_to_user_id || "unassigned";
       const sellerName = employees.find(e => e.id === sellerId)?.full_name || "Sin Asignar";
 
       if (!sellerMap[sellerId]) {
-         sellerMap[sellerId] = { sellerName, totalAmount: 0, servicesCount: 0, services: {} };
+         sellerMap[sellerId] = { sellerName, totalAmount: 0, tasksCount: 0, servicesCount: 0, services: {} };
       }
 
       sellerMap[sellerId].totalAmount += Number(t.total_amount);
+      sellerMap[sellerId].tasksCount += 1;
       sellerMap[sellerId].servicesCount += t.services?.length || 0;
 
       t.services?.forEach(s => {
@@ -221,33 +222,37 @@ export default function CommissionsPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="font-bold">Vendedor</TableHead>
-                    <TableHead className="font-bold">Total Servicios</TableHead>
-                    <TableHead className="text-right font-bold w-32">Total Vendido</TableHead>
+                  <TableRow className="bg-muted/30 flex px-4">
+                    <TableHead className="font-bold flex-1 flex items-center justify-center text-center">Vendedor</TableHead>
+                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center">Servicios</TableHead>
+                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center">Ticket Promedio</TableHead>
+                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center pr-6">Total Vendido</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {commissionsBySeller.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                         No hay ventas registradas en este periodo
                       </TableCell>
                     </TableRow>
                   ) : (
                     <TableRow className="hover:bg-transparent p-0 border-none m-0">
-                      <TableCell colSpan={3} className="p-0 border-none m-0">
+                      <TableCell colSpan={4} className="p-0 border-none m-0 block">
                         <Accordion type="single" collapsible className="w-full">
                           {commissionsBySeller.map((c, i) => (
                             <AccordionItem value={`item-${i}`} key={i} className="border-b">
                               <AccordionTrigger className="w-full hover:no-underline hover:bg-muted/30 py-3 px-4 flex justify-between gap-4">
-                                <div className="flex-1 text-left font-semibold text-slate-800">
+                                <div className="flex-1 text-center font-semibold text-slate-800">
                                   {c.sellerName}
                                 </div>
-                                <div className="text-sm font-medium text-slate-500 w-32 text-left">
-                                  {c.servicesCount} servicios
+                                <div className="text-sm font-medium text-slate-500 w-[130px] text-center">
+                                  {c.servicesCount}
                                 </div>
-                                <div className="text-right font-black text-slate-900 tabular-nums w-24">
+                                <div className="text-sm font-medium text-slate-500 w-[130px] text-center">
+                                  {fmtMoney(c.totalAmount / (c.tasksCount || 1))}
+                                </div>
+                                <div className="font-black text-slate-900 tabular-nums w-[130px] text-center pr-6">
                                   {fmtMoney(c.totalAmount)}
                                 </div>
                               </AccordionTrigger>

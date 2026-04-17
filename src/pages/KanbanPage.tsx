@@ -38,9 +38,9 @@ export default function KanbanPage() {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
-  const kanbanColumns = STATUS_COLUMNS.filter(c => c.id !== "Servicio finalizado");
+  const kanbanColumns = STATUS_COLUMNS;
   const filteredTableTasks = tasks
-    .filter(t => t.status !== "Servicio finalizado")
+    .filter(t => t.status !== "Servicio completado")
     .filter(t => filterStatus === "all" || t.status === filterStatus)
     .filter(t => {
       const cName = t.client?.name?.toLowerCase() || "";
@@ -145,16 +145,14 @@ export default function KanbanPage() {
               Vista Tabla
             </button>
           </div>
-          <div className="h-6 w-px bg-border" />
-          <Button variant="outline" size="sm" onClick={refetch} className="text-sm">
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Actualizar
-          </Button>
           {isAdmin && (
-            <Button size="sm" onClick={() => handleAddClick("Primer contacto")} className="text-sm">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Nueva Tarea
-            </Button>
+            <>
+              <div className="h-6 w-px bg-border" />
+              <Button size="sm" onClick={() => handleAddClick("Primer contacto")} className="text-sm">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Nueva Tarea
+              </Button>
+            </>
           )}
         </div>
       </header>
@@ -198,7 +196,7 @@ export default function KanbanPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estatus</SelectItem>
-                  {STATUS_COLUMNS.filter(c => c.id !== "Servicio finalizado").map(col => (
+                  {STATUS_COLUMNS.filter(c => c.id !== "Servicio completado").map(col => (
                     <SelectItem key={col.id} value={col.id}>
                       <span className="flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: col.color }} />

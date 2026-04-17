@@ -13,7 +13,7 @@ export interface SellerServiceData {
 }
 
 export const getTrendsData = (tasks: CrmTask[]): TrendData[] => {
-  const completed = tasks.filter((t) => t.status === "Servicio finalizado");
+  const completed = tasks.filter((t) => t.status === "Servicio completado");
   const weeklyMap: Record<string, number> = {};
   
   completed.forEach((t) => {
@@ -31,7 +31,7 @@ export const getTrendsData = (tasks: CrmTask[]): TrendData[] => {
 };
 
 export const getSalesBySellerData = (tasks: CrmTask[], employees: { id: string; full_name: string | null }[]) => {
-  const completed = tasks.filter((t) => t.status === "Servicio finalizado");
+  const completed = tasks.filter((t) => t.status === "Servicio completado");
   const sellerMap: Record<string, Record<string, number>> = {};
 
   completed.forEach((t) => {
@@ -55,7 +55,7 @@ export const getFilteredCommissions = (
   startDate?: Date, 
   endDate?: Date
 ) => {
-  const completed = tasks.filter((t) => t.status === "Servicio finalizado");
+  const completed = tasks.filter((t) => t.status === "Servicio completado");
   
   return completed.filter(t => {
     if (!startDate || !endDate) return true;
@@ -68,7 +68,7 @@ export const calculateLastServiceDate = (clients: Client[], tasks: CrmTask[]) =>
   const lastServiceMap: Record<string, string> = {};
   
   tasks.forEach(t => {
-    if (t.status === "Servicio finalizado" && t.scheduled_date) {
+    if (t.status === "Servicio completado" && t.scheduled_date) {
       const currentLast = lastServiceMap[t.client_id];
       if (!currentLast || t.scheduled_date > currentLast) {
         lastServiceMap[t.client_id] = t.scheduled_date;

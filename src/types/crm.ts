@@ -1,4 +1,4 @@
-export type TaskStatus = "Primer contacto" | "Inspeccion" | "Cotizacion" | "Servicio Agendado" | "Servicio en proceso" | "Servicio finalizado";
+export type TaskStatus = "Primer contacto" | "Inspeccion" | "Cotizacion" | "Servicio Agendado" | "Servicio en proceso" | "Servicio completado" | "Revisar Urgente";
 
 export interface CrmTask {
   id: string;
@@ -61,7 +61,8 @@ export const STATUS_COLUMNS: { id: TaskStatus; title: string; color: string }[] 
   { id: "Cotizacion", title: "Cotización", color: "#36FF7D" },
   { id: "Servicio Agendado", title: "Servicio Agendado", color: "#003300" },
   { id: "Servicio en proceso", title: "Servicio en Proceso", color: "#000066" },
-  { id: "Servicio finalizado", title: "Servicio Finalizado", color: "#256764" },
+  { id: "Servicio completado", title: "Servicio Completado", color: "#256764" },
+  { id: "Revisar Urgente", title: "Revisar Urgente", color: "#F54927" },
 ];
 
 export const CATEGORY_ICONS: Record<string, string> = {

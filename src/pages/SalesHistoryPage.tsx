@@ -41,10 +41,10 @@ export default function SalesHistoryPage() {
     { value: "Servicio en proceso", label: "Servicio en Proceso" },
   ];
 
-  // Only "Servicio finalizado" tasks
+  // Only "Servicio completado" tasks
   const completedTasks = useMemo(() => {
     return tasks
-      .filter(t => t.status === "Servicio finalizado")
+      .filter(t => t.status === "Servicio completado")
       .filter(t => {
         if (!search.trim()) return true;
         const q = search.toLowerCase();

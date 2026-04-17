@@ -40,7 +40,7 @@ export function useCrmData() {
 
     const lastServiceMap: Record<string, string> = {};
     enrichedTasks.forEach(t => {
-      if (t.status === "Servicio finalizado" && t.service_date) {
+      if (t.status === "Servicio completado" && t.service_date) {
         if (!lastServiceMap[t.client_id] || t.service_date > lastServiceMap[t.client_id]) {
           lastServiceMap[t.client_id] = t.service_date;
         }

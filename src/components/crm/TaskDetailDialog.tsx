@@ -131,7 +131,7 @@ export function TaskDetailDialog({
               value={status}
               onValueChange={(v) => {
                 const newStatus = v as TaskStatus;
-                if (newStatus === "Servicio finalizado") {
+                if (newStatus === "Servicio completado") {
                   setPendingStatus(newStatus);
                   setShowFinalizeConfirm(true);
                 } else {
@@ -158,7 +158,7 @@ export function TaskDetailDialog({
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     Está seguro de que quiere cerrar este servicio? El task pasará a
-                    <strong> Servicio Finalizado</strong> y se moverá al Historial de Ventas.
+                    <strong> Servicio Completado</strong> y se moverá al Historial de Ventas.
                     Esta acción puede revertirse desde el Historial de Ventas si fue un error.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

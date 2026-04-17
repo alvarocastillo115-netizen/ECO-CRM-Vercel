@@ -71,9 +71,9 @@ export default function DashboardPage() {
       });
     };
 
-    const completed = applyGlobal(tasks.filter((t) => t.status === "Servicio finalizado"));
+    const completed = applyGlobal(tasks.filter((t) => t.status === "Servicio completado"));
     const pipeline = tasks.filter((t) => ["Inspeccion", "Cotizacion", "Servicio Agendado", "Servicio en proceso"].includes(t.status));
-    const active = tasks.filter((t) => t.status !== "Servicio finalizado");
+    const active = tasks.filter((t) => t.status !== "Servicio completado");
 
     const totalRevenue = completed.reduce((s, t) => s + Number(t.total_amount), 0);
     const pipelineValue = pipeline.reduce((s, t) => s + Number(t.total_amount), 0);
@@ -286,14 +286,14 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={stats.serviceData} layout="vertical" margin={{ left: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis type="number" tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} width={120} />
-                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <XAxis type="number" tick={{ fontSize: 13, fill: "#000", fontWeight: 700, fontFamily: "inherit" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#000", fontWeight: 700, fontFamily: "inherit" }} axisLine={false} tickLine={false} width={120} />
+                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily: "inherit" }} />
                 <Bar dataKey="value" radius={0}>
                   {stats.serviceData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
-                  <LabelList dataKey="value" position="right" formatter={(v: number) => fmtMoney(v)} fontSize={12} className="font-bold" fill="#000" />
+                  <LabelList dataKey="value" position="right" formatter={(v: number) => fmtMoney(v)} fontSize={12} className="font-bold" fill="#000" style={{ fontFamily: "inherit" }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

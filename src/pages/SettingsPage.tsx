@@ -13,7 +13,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Loader2, Tag, Users, ShieldCheck, ShieldAlert, Pencil, Trash2, Check, X, UserCog } from "lucide-react";
+import { Plus, Loader2, Tag, Users, ShieldCheck, ShieldAlert, Pencil, Trash2, Check, X, UserCog, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -224,6 +224,22 @@ function EmployeeManager() {
     setAdding(false);
   };
 
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (confirm(`¿Estás seguro de que deseas denegar el acceso a ${name}? Esto eliminará su cuenta y no se podrá deshacer.`)) {
+      setUpdating(true);
+      const { data, error } = await supabase.functions.invoke("update-employee", {
+        body: { id, action: "delete" },
+      });
+      if (error || data?.error) {
+        toast({ title: "Error al denegar acceso", description: data?.error || error?.message || "Failed", variant: "destructive" });
+      } else {
+        toast({ title: "Acceso denegado", description: "El usuario ha sido eliminado exitosamente." });
+        loadEmployees();
+      }
+      setUpdating(false);
+    }
+  };
+
   const handleUpdate = async (id: string) => {
     if (!editEmail.trim() || !editFullName.trim()) return;
     setUpdating(true);
@@ -334,14 +350,25 @@ function EmployeeManager() {
                         </Badge>
                       )}
                       {isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => { setEditingId(emp.id); setEditFullName(emp.full_name || ""); setEditEmail(emp.email); setEditPassword(""); }}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs border-destructive/20 text-destructive hover:bg-destructive hover:text-white"
+                            onClick={() => handleDeleteUser(emp.id, emp.full_name || emp.email)}
+                          >
+                            <Ban className="h-3 w-3 mr-1.5" />
+                            Denegar acceso
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => { setEditingId(emp.id); setEditFullName(emp.full_name || ""); setEditEmail(emp.email); setEditPassword(""); }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </>

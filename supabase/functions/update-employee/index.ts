@@ -23,9 +23,22 @@ serve(async (req) => {
     const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin").single();
     if (!roleData) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { id, email, full_name, password } = await req.json();
-    if (!id || !email || !full_name) {
-       return new Response(JSON.stringify({ error: "id, email and full_name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const body = await req.json();
+    const { id, email, full_name, password, action } = body;
+    
+    if (!id) {
+       return new Response(JSON.stringify({ error: "id is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (action === "delete") {
+      const { error } = await supabase.auth.admin.deleteUser(id);
+      if (error) throw error;
+      await supabase.from("profiles").delete().eq("id", id);
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (!email || !full_name) {
+       return new Response(JSON.stringify({ error: "email and full_name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Update Auth user

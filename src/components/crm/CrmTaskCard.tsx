@@ -68,7 +68,7 @@ export function CrmTaskCard({ task, columnColor, onClick }: CrmTaskCardProps) {
                 <span className="text-[10px] font-bold uppercase tracking-wide">Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd MMM")}</span>
               </div>
             )}
-            {task.service_date && ["Servicio Agendado", "Servicio en proceso", "Servicio finalizado"].includes(task.status) && (
+            {task.service_date && ["Servicio Agendado", "Servicio en proceso", "Servicio completado"].includes(task.status) && (
               <div className="flex items-center gap-1 text-[#09B549] bg-[#09B549]/10 px-1.5 py-0.5 rounded w-fit">
                 <Calendar className="h-3 w-3" />
                 <span className="text-[10px] font-bold uppercase tracking-wide">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd MMM")}</span>

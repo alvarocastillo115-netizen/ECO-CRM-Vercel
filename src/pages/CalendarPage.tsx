@@ -145,7 +145,7 @@ export default function CalendarPage() {
     "Cotizacion": "bg-[#FFF293]/50 text-yellow-800",
     "Servicio Agendado": "bg-[#09B549]",
     "Servicio en proceso": "bg-[#FE9F43]",
-    "Servicio finalizado": "bg-[#256764]",
+    "Servicio completado": "bg-[#256764]",
   };
 
   if (loading) {
