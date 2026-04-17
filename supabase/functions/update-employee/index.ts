@@ -23,16 +23,22 @@ serve(async (req) => {
     const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin").single();
     if (!roleData) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { id, email, full_name } = await req.json();
+    const { id, email, full_name, password } = await req.json();
     if (!id || !email || !full_name) {
        return new Response(JSON.stringify({ error: "id, email and full_name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Update Auth user
-    const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(id, {
+    const updatePayload: any = {
       email,
       user_metadata: { full_name }
-    });
+    };
+    
+    if (password && password.trim().length > 0) {
+      updatePayload.password = password;
+    }
+
+    const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(id, updatePayload);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

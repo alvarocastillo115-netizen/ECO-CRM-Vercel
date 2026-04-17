@@ -184,6 +184,7 @@ function EmployeeManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFullName, setEditFullName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
   const [updating, setUpdating] = useState(false);
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
 
@@ -227,13 +228,14 @@ function EmployeeManager() {
     if (!editEmail.trim() || !editFullName.trim()) return;
     setUpdating(true);
     const { data, error } = await supabase.functions.invoke("update-employee", {
-      body: { id, email: editEmail.trim(), full_name: editFullName.trim() },
+      body: { id, email: editEmail.trim(), full_name: editFullName.trim(), password: editPassword.trim() },
     });
     if (error || data?.error) {
       toast({ title: "Error al actualizar", description: data?.error || error?.message || "Failed", variant: "destructive" });
     } else {
       toast({ title: "Usuario actualizado" });
       setEditingId(null);
+      setEditPassword("");
       loadEmployees();
     }
     setUpdating(false);
@@ -278,8 +280,9 @@ function EmployeeManager() {
                   <div className="flex-1 space-y-2 mr-2">
                     <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} className="h-8 text-sm" placeholder="Nombre completo" autoFocus />
                     <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-8 text-sm" placeholder="Email" type="email" />
+                    <Input value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="h-8 text-sm" placeholder="Nueva Contraseña (Dejar en blanco para mantener)" type="password" />
                     <div className="flex justify-end gap-1 mt-1">
-                      <Button variant="ghost" size="sm" className="h-7 px-3 text-muted-foreground" onClick={() => setEditingId(null)}>Cancelar</Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-3 text-muted-foreground" onClick={() => { setEditingId(null); setEditPassword(""); }}>Cancelar</Button>
                       <Button size="sm" className="h-7 px-3 text-xs" disabled={updating} onClick={() => handleUpdate(emp.id)}>
                         {updating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
                         Guardar
@@ -335,7 +338,7 @@ function EmployeeManager() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => { setEditingId(emp.id); setEditFullName(emp.full_name || ""); setEditEmail(emp.email); }}
+                          onClick={() => { setEditingId(emp.id); setEditFullName(emp.full_name || ""); setEditEmail(emp.email); setEditPassword(""); }}
                         >
                           <Pencil className="h-3 w-3" />
                         </Button>
