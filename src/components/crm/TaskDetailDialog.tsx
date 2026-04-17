@@ -25,6 +25,7 @@ interface TaskDetailDialogProps {
   employees: Profile[];
   onUpdateTask: (taskId: string, data: any) => Promise<{ error: string | null }>;
   onUpdateStatus: (taskId: string, status: TaskStatus, keepAnEyeData?: any) => Promise<{ error: string | null }>;
+  readOnly?: boolean;
 }
 
 export function TaskDetailDialog({
@@ -35,6 +36,7 @@ export function TaskDetailDialog({
   employees,
   onUpdateTask,
   onUpdateStatus,
+  readOnly = false,
 }: TaskDetailDialogProps) {
   const [status, setStatus] = useState<TaskStatus>("Primer contacto");
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
@@ -129,6 +131,7 @@ export function TaskDetailDialog({
             <Label>Estado</Label>
             <Select
               value={status}
+              disabled={readOnly}
               onValueChange={(v) => {
                 const newStatus = v as TaskStatus;
                 if (newStatus === "Servicio completado") {
@@ -197,6 +200,7 @@ export function TaskDetailDialog({
                   <div key={cat.id} className="flex items-center gap-3">
                     <Checkbox
                       checked={isSelected}
+                      disabled={readOnly}
                       onCheckedChange={() => toggleCategory(cat.id)}
                     />
                     <span className="text-sm flex-1">{cat.name}</span>
@@ -207,6 +211,7 @@ export function TaskDetailDialog({
                           type="number"
                           min="0"
                           step="0.01"
+                          disabled={readOnly}
                           value={selectedServices[cat.id] || ""}
                           onChange={(e) =>
                             setSelectedServices((p) => ({ ...p, [cat.id]: parseFloat(e.target.value) || 0 }))
@@ -230,14 +235,14 @@ export function TaskDetailDialog({
           {/* Specs */}
           <div>
             <Label>Especificaciones</Label>
-            <Textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
+            <Textarea disabled={readOnly} value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={2} className="mt-1" />
           </div>
 
           {/* Assigned & Dates Layout */}
           <div className="space-y-4 pt-2 border-t mt-2">
             <div>
               <Label>Personal asignado</Label>
-              <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <Select value={assignedTo} onValueChange={setAssignedTo} disabled={readOnly}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Empleado..." /></SelectTrigger>
                 <SelectContent>
                   {employees.map((emp) => (
@@ -251,11 +256,11 @@ export function TaskDetailDialog({
               <div className="grid grid-cols-2 gap-3 bg-[#FF6600]/5 p-3 rounded-lg border border-[#FF6600]/20">
                 <div>
                   <Label className="text-[#e65c00]">Fecha de cotización / inspección</Label>
-                  <Input type="date" value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                  <Input type="date" disabled={readOnly} value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="border-[#FF6600]/30 mt-1" />
                 </div>
                 <div>
                   <Label className="text-[#e65c00]">Hora de cotización / inspección</Label>
-                  <Input type="time" value={inspectionTime} onChange={(e) => setInspectionTime(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                  <Input type="time" disabled={readOnly} value={inspectionTime} onChange={(e) => setInspectionTime(e.target.value)} className="border-[#FF6600]/30 mt-1" />
                 </div>
               </div>
             )}
@@ -264,20 +269,22 @@ export function TaskDetailDialog({
               <div className="grid grid-cols-2 gap-3 bg-[#09B549]/5 p-3 rounded-lg border border-[#09B549]/20">
                 <div>
                   <Label className="text-[#09B549]">Fecha de servicio</Label>
-                  <Input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                  <Input type="date" disabled={readOnly} value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="border-[#09B549]/30 mt-1" />
                 </div>
                 <div>
                   <Label className="text-[#09B549]">Hora de servicio</Label>
-                  <Input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                  <Input type="time" disabled={readOnly} value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="border-[#09B549]/30 mt-1" />
                 </div>
               </div>
             )}
           </div>
 
-          <Button onClick={() => handleSave()} className="w-full" disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Guardar cambios
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => handleSave()} className="w-full" disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Guardar cambios
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

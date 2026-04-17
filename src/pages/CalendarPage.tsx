@@ -382,6 +382,7 @@ export default function CalendarPage() {
         employees={employees}
         onUpdateTask={updateTask}
         onUpdateStatus={updateTaskStatus}
+        readOnly={true}
       />
     </div>
   );
