@@ -68,10 +68,10 @@ export const calculateLastServiceDate = (clients: Client[], tasks: CrmTask[]) =>
   const lastServiceMap: Record<string, string> = {};
   
   tasks.forEach(t => {
-    if (t.status === "Servicio completado" && t.scheduled_date) {
+    if (t.status === "Servicio completado" && t.service_date) {
       const currentLast = lastServiceMap[t.client_id];
-      if (!currentLast || t.scheduled_date > currentLast) {
-        lastServiceMap[t.client_id] = t.scheduled_date;
+      if (!currentLast || t.service_date > currentLast) {
+        lastServiceMap[t.client_id] = t.service_date;
       }
     }
   });

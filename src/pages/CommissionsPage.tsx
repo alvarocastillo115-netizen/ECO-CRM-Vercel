@@ -222,11 +222,12 @@ export default function CommissionsPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/30 flex px-4">
-                    <TableHead className="font-bold flex-1 flex items-center justify-center text-center">Vendedor</TableHead>
-                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center">Servicios</TableHead>
-                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center">Ticket Promedio</TableHead>
-                    <TableHead className="font-bold w-[130px] flex items-center justify-center text-center pr-6">Total Vendido</TableHead>
+                  <TableRow className="bg-muted/30 flex items-center px-4 py-3 gap-4 border-none">
+                    <TableHead className="font-bold flex-1 text-left p-0 h-auto text-slate-700">Vendedor</TableHead>
+                    <TableHead className="font-bold w-[130px] text-center p-0 h-auto text-slate-700">Servicios</TableHead>
+                    <TableHead className="font-bold w-[130px] text-center p-0 h-auto text-slate-700">Ticket Promedio</TableHead>
+                    <TableHead className="font-bold w-[130px] text-right p-0 h-auto text-slate-700">Total Vendido</TableHead>
+                    <div className="w-4 shrink-0" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -242,8 +243,8 @@ export default function CommissionsPage() {
                         <Accordion type="single" collapsible className="w-full">
                           {commissionsBySeller.map((c, i) => (
                             <AccordionItem value={`item-${i}`} key={i} className="border-b">
-                              <AccordionTrigger className="w-full hover:no-underline hover:bg-muted/30 py-3 px-4 flex justify-between gap-4">
-                                <div className="flex-1 text-center font-semibold text-slate-800">
+                              <AccordionTrigger className="w-full hover:no-underline hover:bg-muted/30 py-3 px-4 flex items-center gap-4">
+                                <div className="flex-1 text-left font-semibold text-slate-800">
                                   {c.sellerName}
                                 </div>
                                 <div className="text-sm font-medium text-slate-500 w-[130px] text-center">
@@ -252,7 +253,7 @@ export default function CommissionsPage() {
                                 <div className="text-sm font-medium text-slate-500 w-[130px] text-center">
                                   {fmtMoney(c.totalAmount / (c.tasksCount || 1))}
                                 </div>
-                                <div className="font-black text-slate-900 tabular-nums w-[130px] text-center pr-6">
+                                <div className="font-black text-slate-900 tabular-nums w-[130px] text-right">
                                   {fmtMoney(c.totalAmount)}
                                 </div>
                               </AccordionTrigger>

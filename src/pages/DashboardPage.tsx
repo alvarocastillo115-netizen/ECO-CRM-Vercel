@@ -165,7 +165,7 @@ export default function DashboardPage() {
     
     dateFilteredSched.forEach((t) => {
       const count = t.services?.length || 1;
-      const dayName = jsDayToName[getDay(parseISO(t.scheduled_date))];
+      const dayName = jsDayToName[getDay(parseISO(t.service_date || t.created_at))];
       if (weekdayMap[dayName] !== undefined) {
          weekdayMap[dayName] += count;
       }
@@ -200,7 +200,7 @@ export default function DashboardPage() {
       serviceData, top5Services, bottom5Services,
       buildPieData, weeklyData, scheduledData, topClients, sellerData
     };
-  }, [tasks, trendRange, schedRange, globalDateRange]);
+  }, [tasks, employees, trendFilter, trendRange, schedRange, globalDateRange]);
 
   if (loading) {
     return (
