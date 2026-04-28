@@ -58,7 +58,7 @@ export type AppRole = "admin" | "employee";
 export const STATUS_COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
   { id: "Primer contacto", title: "Primer Contacto", color: "#FF0000" },
   { id: "Inspeccion", title: "Inspección", color: "#FF6600" },
-  { id: "Cotizacion", title: "Cotización", color: "#36FF7D" },
+  { id: "Cotizacion", title: "Cotización", color: "#3527F5" },
   { id: "Servicio Agendado", title: "Servicio Agendado", color: "#003300" },
   { id: "Servicio en proceso", title: "Servicio en Proceso", color: "#000066" },
   { id: "Servicio completado", title: "Servicio Completado", color: "#256764" },

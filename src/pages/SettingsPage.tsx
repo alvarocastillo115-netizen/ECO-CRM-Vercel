@@ -210,12 +210,23 @@ function EmployeeManager() {
 
   const handleCreate = async () => {
     if (!email.trim() || !password.trim()) return;
+    if (password.length < 6) {
+      toast({ title: "Contraseña muy corta", description: "Debe tener al menos 6 caracteres.", variant: "destructive" });
+      return;
+    }
+
     setAdding(true);
     const { data, error } = await supabase.functions.invoke("create-employee", {
       body: { email: email.trim(), password, full_name: fullName.trim() },
     });
+
     if (error || data?.error) {
-      toast({ title: "Error", description: data?.error || error?.message || "Failed", variant: "destructive" });
+      let errorMessage = data?.error || error?.message || "Error desconocido devuelto por el servidor.";
+      // Si el edge function explota y supabase-js devuelve un error http, lo hacemos legible
+      if (errorMessage.includes("non-2xx status code")) {
+        errorMessage = "El servidor rechazó la solicitud. Es probable que este correo ya esté registrado en otra cuenta.";
+      }
+      toast({ title: "Error al registrar usuario", description: errorMessage, variant: "destructive" });
     } else {
       toast({ title: "Usuario creado", description: `${email} ha sido registrado exitosamente.` });
       setEmail(""); setPassword(""); setFullName("");
