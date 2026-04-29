@@ -9,7 +9,7 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 // Primary: hsl(177, 47.1%, 27.5%) → #256764 (deep teal/emerald)
 // Deep: hsl(185, 66.3%, 16.3%) → #092f33 (dark teal - sidebar)
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function Calendar({ className, classNames, showOutsideDays = false, ...props }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
