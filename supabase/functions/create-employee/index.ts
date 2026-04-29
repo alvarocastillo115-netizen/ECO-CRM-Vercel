@@ -21,7 +21,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No authorization" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -30,7 +30,7 @@ serve(async (req) => {
     const { data: { user: caller } } = await supabase.auth.getUser(token);
     if (!caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -45,7 +45,7 @@ serve(async (req) => {
 
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -63,7 +63,7 @@ serve(async (req) => {
     if (createError || !newUser.user) {
       return new Response(
         JSON.stringify({ error: createError?.message || "Failed to create user" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -80,7 +80,7 @@ serve(async (req) => {
   } catch (e) {
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
