@@ -16,6 +16,7 @@ export interface CrmTask {
   assigned_to_user_id: string | null;
   specifications: string;
   updated_at: string;
+  sale_closed_at?: string | null;
   // Joined data
   client?: Client;
   services?: TaskService[];
@@ -51,6 +52,7 @@ export interface Profile {
   full_name: string;
   email: string;
   created_at: string;
+  is_active?: boolean;
 }
 
 export type AppRole = "admin" | "employee";

@@ -194,8 +194,10 @@ function EmployeeManager() {
     const { data: profiles } = await supabase.from("profiles").select("*");
     const { data: roles } = await supabase.from("user_roles").select("*");
     if (profiles) {
+      // Solo mostrar usuarios activos
+      const activeProfiles = profiles.filter((p: any) => p.is_active !== false);
       setEmployees(
-        profiles.map((p: any) => ({
+        activeProfiles.map((p: any) => ({
           id: p.id,
           full_name: p.full_name,
           email: p.email,
@@ -236,15 +238,15 @@ function EmployeeManager() {
   };
 
   const handleDeleteUser = async (id: string, name: string) => {
-    if (confirm(`¿Estás seguro de que deseas denegar el acceso a ${name}? Esto eliminará su cuenta y no se podrá deshacer.`)) {
+    if (confirm(`¿Estás seguro de que deseas eliminar a ${name}? Sus registros de ventas se mantendrán en el historial.`)) {
       setUpdating(true);
       const { data, error } = await supabase.functions.invoke("update-employee", {
         body: { id, action: "delete" },
       });
       if (error || data?.error) {
-        toast({ title: "Error al denegar acceso", description: data?.error || error?.message || "Failed", variant: "destructive" });
+        toast({ title: "Error al eliminar usuario", description: data?.error || error?.message || "Failed", variant: "destructive" });
       } else {
-        toast({ title: "Acceso denegado", description: "El usuario ha sido eliminado exitosamente." });
+        toast({ title: "Usuario eliminado", description: "El usuario ha sido eliminado exitosamente." });
         loadEmployees();
       }
       setUpdating(false);
@@ -368,8 +370,8 @@ function EmployeeManager() {
                             className="h-7 text-xs border-destructive/20 text-destructive hover:bg-destructive hover:text-white"
                             onClick={() => handleDeleteUser(emp.id, emp.full_name || emp.email)}
                           >
-                            <Ban className="h-3 w-3 mr-1.5" />
-                            Denegar acceso
+                            <Trash2 className="h-3 w-3 mr-1.5" />
+                            Eliminar usuario
                           </Button>
                           <Button
                             variant="ghost"

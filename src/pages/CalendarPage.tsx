@@ -62,12 +62,12 @@ export default function CalendarPage() {
   const tasksByDate = useMemo(() => {
     const map: Record<string, { task: CrmTask, type: "inspection" | "service" }[]> = {};
     tasks.forEach((t) => {
-      // Only show: Inspeccion (on inspection_date) and Servicio Agendado (on service_date)
+      // Only show: Inspeccion (on inspection_date) and Servicio Agendado / en proceso (on service_date)
       if (t.status === "Inspeccion" && t.inspection_date) {
         const key = t.inspection_date;
         if (!map[key]) map[key] = [];
         map[key].push({ task: t, type: "inspection" });
-      } else if (t.status === "Servicio Agendado" && t.service_date) {
+      } else if ((t.status === "Servicio Agendado" || t.status === "Servicio en proceso") && t.service_date) {
         const key = t.service_date;
         if (!map[key]) map[key] = [];
         map[key].push({ task: t, type: "service" });
@@ -76,7 +76,7 @@ export default function CalendarPage() {
     return map;
   }, [tasks]);
 
-  // Week view: dynamic time grid data — only Inspeccion + Servicio Agendado
+  // Week view: dynamic time grid data — only Inspeccion + Servicio Agendado/en proceso
   const weekData = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -93,7 +93,7 @@ export default function CalendarPage() {
 
       if (t.status === "Inspeccion" && t.inspection_date) {
         dateKey = t.inspection_date; type = "inspection";
-      } else if (t.status === "Servicio Agendado" && t.service_date) {
+      } else if ((t.status === "Servicio Agendado" || t.status === "Servicio en proceso") && t.service_date) {
         dateKey = t.service_date; type = "service";
       }
 

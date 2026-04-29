@@ -31,9 +31,11 @@ serve(async (req) => {
     }
 
     if (action === "delete") {
-      const { error } = await supabase.auth.admin.deleteUser(id);
+      // Soft disable: Ban the user so they can't login, and mark as inactive to hide from lists.
+      // This preserves all their tasks and sales history.
+      const { error } = await supabase.auth.admin.updateUserById(id, { ban_duration: '876000h' });
       if (error) throw error;
-      await supabase.from("profiles").delete().eq("id", id);
+      await supabase.from("profiles").update({ is_active: false }).eq("id", id);
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

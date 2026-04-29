@@ -115,11 +115,22 @@ export function useCrmData() {
       status: TaskStatus
     ) => {
       const updateData: any = { status };
+      const task = tasks.find((t) => t.id === taskId);
+      if (
+        status === "Servicio Agendado" ||
+        status === "Servicio en proceso" ||
+        status === "Servicio completado"
+      ) {
+        if (task && !task.sale_closed_at) {
+          updateData.sale_closed_at = new Date().toISOString();
+        }
+      }
+
       const { error } = await supabase.from("crm_tasks").update(updateData).eq("id", taskId);
       if (!error) await fetchAll();
       return { error: error?.message || null };
     },
-    [fetchAll]
+    [fetchAll, tasks]
   );
 
   const updateTask = useCallback(
@@ -140,6 +151,17 @@ export function useCrmData() {
       const finalUpdates: Record<string, any> = { ...taskUpdates };
       if (services) {
         finalUpdates.total_amount = services.reduce((s, sv) => s + sv.amount_allocated, 0);
+      }
+
+      if (
+        finalUpdates.status === "Servicio Agendado" ||
+        finalUpdates.status === "Servicio en proceso" ||
+        finalUpdates.status === "Servicio completado"
+      ) {
+        const task = tasks.find((t) => t.id === taskId);
+        if (task && !task.sale_closed_at) {
+          finalUpdates.sale_closed_at = new Date().toISOString();
+        }
       }
 
       const { error } = await supabase.from("crm_tasks").update(finalUpdates).eq("id", taskId);

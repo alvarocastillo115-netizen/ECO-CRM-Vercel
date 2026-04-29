@@ -28,7 +28,7 @@ export default function KanbanPage() {
   const [detailTask, setDetailTask] = useState<CrmTask | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "table">("table");
   
   const [filterClient, setFilterClient] = useState("");
   const [filterEmployee, setFilterEmployee] = useState("");
@@ -166,7 +166,7 @@ export default function KanbanPage() {
                 status={col.id}
                 title={col.title}
                 color={col.color}
-                tasks={getTasksByStatus(col.id)}
+                tasks={col.id === "Servicio completado" ? [] : getTasksByStatus(col.id)}
                 onAddClick={() => handleAddClick(col.id)}
                 onTaskClick={handleTaskClick}
                 onDragOver={(e) => handleDragOver(e, col.id)}

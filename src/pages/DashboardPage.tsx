@@ -65,17 +65,19 @@ export default function DashboardPage() {
       const from = startOfDay(globalDateRange.from);
       const to = globalDateRange.to ? endOfDay(globalDateRange.to) : endOfDay(globalDateRange.from);
       return list.filter(t => {
-        const ds = t.service_date || t.updated_at;
+        const ds = t.sale_closed_at || t.service_date || t.updated_at;
         try { return isWithinInterval(parseISO(ds), { start: from, end: to }); }
         catch { return false; }
       });
     };
 
     const completed = applyGlobal(tasks.filter((t) => t.status === "Servicio completado"));
-    const pipeline = tasks.filter((t) => ["Inspeccion", "Cotizacion", "Servicio Agendado", "Servicio en proceso"].includes(t.status));
+    const promised = applyGlobal(tasks.filter((t) => ["Servicio Agendado", "Servicio en proceso"].includes(t.status)));
+    const pipeline = tasks.filter((t) => ["Primer contacto", "Inspeccion", "Cotizacion"].includes(t.status));
     const active = tasks.filter((t) => t.status !== "Servicio completado");
 
     const totalRevenue = completed.reduce((s, t) => s + Number(t.total_amount), 0);
+    const promisedValue = promised.reduce((s, t) => s + Number(t.total_amount), 0);
     const pipelineValue = pipeline.reduce((s, t) => s + Number(t.total_amount), 0);
 
     // Revenue by service category (completed)
@@ -117,25 +119,26 @@ export default function DashboardPage() {
         .sort((a, b) => b.value - a.value);
     };
 
-    // Filtered tasks for Tendencia de Venta
-    const dateFilteredTrends = completed.filter(t => {
-      const d = parseISO(t.created_at);
+    // Filtered tasks for Tendencia de Venta (includes both completed and promised)
+    const dateFilteredTrends = [...completed, ...promised].filter(t => {
+      const d = parseISO(t.sale_closed_at || t.created_at);
       // for "mes" we include the whole month, etc.
       return d >= trendRange.start && d <= trendRange.end;
     });
 
     const weeklyMap: Record<string, number> = {};
     dateFilteredTrends.forEach((t) => {
-      let dateKey = t.created_at;
+      const baseDate = t.sale_closed_at || t.created_at;
+      let dateKey = baseDate;
       if (trendFilter === 'mes') {
          // Show monthly trend
-         dateKey = format(parseISO(t.created_at), "yyyy-MM");
+         dateKey = format(parseISO(baseDate), "yyyy-MM");
       } else if (trendFilter === 'semana') {
          // Show weekly trend
-         dateKey = format(startOfWeek(parseISO(t.created_at), { weekStartsOn: 1 }), "yyyy-MM-dd");
+         dateKey = format(startOfWeek(parseISO(baseDate), { weekStartsOn: 1 }), "yyyy-MM-dd");
       } else {
          // dia -> Show daily trend
-         dateKey = format(parseISO(t.created_at), "yyyy-MM-dd");
+         dateKey = format(parseISO(baseDate), "yyyy-MM-dd");
       }
       weeklyMap[dateKey] = (weeklyMap[dateKey] || 0) + Number(t.total_amount);
     });
@@ -147,7 +150,7 @@ export default function DashboardPage() {
         value,
       }));
 
-    const sellerData = getSalesBySellerData(tasks, employees);
+    const sellerData = getSalesBySellerData([...completed, ...promised], employees);
 
     // Tendencia Semanal de Servicios Agendados -> filter and group by MONDAY to SUNDAY
     const dateFilteredSched = tasks.filter(t => {
@@ -196,7 +199,7 @@ export default function DashboardPage() {
     const topClients = Object.values(clientSpend).sort((a, b) => b.total - a.total);
 
     return {
-      totalRevenue, pipelineValue, activeCount: active.length,
+      totalRevenue, promisedValue, pipelineValue, activeCount: active.length,
       serviceData, top5Services, bottom5Services,
       buildPieData, weeklyData, scheduledData, topClients, sellerData
     };
@@ -211,7 +214,7 @@ export default function DashboardPage() {
   }
 
   const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-  const pieClosed = stats.buildPieData("closed");
+  const pieClosed = stats.buildPieData("closed"); // NOTE: this still relies on "completed"
   const piePipeline = stats.buildPieData("pipeline");
 
   return (
@@ -268,10 +271,11 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KpiCard label="Ventas Cobradas" value={fmtMoney(stats.totalRevenue)} icon={DollarSign} color="primary" />
-        <KpiCard label="Pipeline" value={fmtMoney(stats.pipelineValue)} icon={TrendingUp} color="info" />
-        <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="warning" />
+        <KpiCard label="Ventas Pendientes" value={fmtMoney(stats.promisedValue)} icon={DollarSign} color="info" />
+        <KpiCard label="Oportunidades" value={fmtMoney(stats.pipelineValue)} icon={TrendingUp} color="warning" />
+        <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="primary" />
       </div>
 
       {/* Ventas por Servicio */}
