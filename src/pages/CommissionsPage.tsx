@@ -152,9 +152,6 @@ export default function CommissionsPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Reporte detallado de ventas por vendedor</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setRange('last15')}>Última quincena</Button>
-          <Button variant="outline" size="sm" onClick={() => setRange('lastMonth')}>Mes pasado</Button>
-          <Button variant="outline" size="sm" onClick={() => setRange('currentMonth')}>Este mes</Button>
           
           <Popover>
             <PopoverTrigger asChild>

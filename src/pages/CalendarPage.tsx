@@ -207,9 +207,6 @@ export default function CalendarPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())} className="ml-2 h-9">
-            Hoy
-          </Button>
           <Button variant="default" size="sm" onClick={handleExportImage} disabled={isExporting} className="ml-2 h-9 bg-primary text-primary-foreground hover:bg-primary/90">
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
             Compartir (PNG)
