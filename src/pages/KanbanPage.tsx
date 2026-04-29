@@ -335,8 +335,8 @@ export default function KanbanPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1 text-xs text-slate-500">
-                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd MMM yyyy")}</span>}
-                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd MMM yyyy")}</span>}
+                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd MMM yyyy")}{task.inspection_time ? ` | ${task.inspection_time}` : ""}</span>}
+                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd MMM yyyy")}{task.service_time ? ` | ${task.service_time}` : ""}</span>}
                               {!task.inspection_date && !task.service_date && <span>N/A</span>}
                             </div>
                           </TableCell>

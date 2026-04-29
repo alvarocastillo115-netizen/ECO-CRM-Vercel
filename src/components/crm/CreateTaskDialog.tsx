@@ -59,9 +59,11 @@ export function CreateTaskDialog({
   }, [clients, clientSearch]);
   
   const [inspectionDate, setInspectionDate] = useState("");
-  const [inspectionTime, setInspectionTime] = useState("");
+  const [inspectionTimeStart, setInspectionTimeStart] = useState("");
+  const [inspectionTimeEnd, setInspectionTimeEnd] = useState("");
   const [serviceDate, setServiceDate] = useState("");
-  const [serviceTime, setServiceTime] = useState("");
+  const [serviceTimeStart, setServiceTimeStart] = useState("");
+  const [serviceTimeEnd, setServiceTimeEnd] = useState("");
   const [specifications, setSpecifications] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Record<string, number>>({});
@@ -101,9 +103,11 @@ export function CreateTaskDialog({
     setNewClientAddress("");
     setNewClientPhone("");
     setInspectionDate("");
-    setInspectionTime("");
+    setInspectionTimeStart("");
+    setInspectionTimeEnd("");
     setServiceDate("");
-    setServiceTime("");
+    setServiceTimeStart("");
+    setServiceTimeEnd("");
     setSpecifications("");
     setAssignedTo("");
     setSelectedCategories({});
@@ -151,9 +155,9 @@ export function CreateTaskDialog({
       client_id: finalClientId,
       description: "",
       inspection_date: inspectionDate || null,
-      inspection_time: inspectionTime,
+      inspection_time: (inspectionTimeStart || inspectionTimeEnd) ? `${inspectionTimeStart}${inspectionTimeStart && inspectionTimeEnd ? ' - ' : ''}${inspectionTimeEnd}` : "",
       service_date: serviceDate || null,
-      service_time: serviceTime,
+      service_time: (serviceTimeStart || serviceTimeEnd) ? `${serviceTimeStart}${serviceTimeStart && serviceTimeEnd ? ' - ' : ''}${serviceTimeEnd}` : "",
       specifications,
       assigned_to_user_id: assignedTo || null,
       services,
@@ -348,22 +352,34 @@ export function CreateTaskDialog({
                   <Label className="text-[#e65c00]">Fecha de cotización / inspección</Label>
                   <Input type="date" value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="border-[#FF6600]/30 mt-1" />
                 </div>
-                <div>
-                  <Label className="text-[#e65c00]">Hora de cotización / inspección</Label>
-                  <Input type="time" value={inspectionTime} onChange={(e) => setInspectionTime(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                <div className="col-span-2 grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <Label className="text-[#e65c00]">Hora de inicio</Label>
+                    <Input type="time" value={inspectionTimeStart} onChange={(e) => setInspectionTimeStart(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-[#e65c00]">Hora de fin</Label>
+                    <Input type="time" value={inspectionTimeEnd} onChange={(e) => setInspectionTimeEnd(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                  </div>
                 </div>
               </div>
             )}
 
-            {status === "Servicio Agendado" && (
+            {(status === "Servicio Agendado" || status === "Servicio en proceso") && (
               <div className="grid grid-cols-2 gap-3 bg-[#09B549]/5 p-3 rounded-lg border border-[#09B549]/20">
                 <div>
                   <Label className="text-[#09B549]">Fecha de servicio</Label>
                   <Input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="border-[#09B549]/30 mt-1" />
                 </div>
-                <div>
-                  <Label className="text-[#09B549]">Hora de servicio</Label>
-                  <Input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                <div className="col-span-2 grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <Label className="text-[#09B549]">Hora de inicio</Label>
+                    <Input type="time" value={serviceTimeStart} onChange={(e) => setServiceTimeStart(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-[#09B549]">Hora de fin</Label>
+                    <Input type="time" value={serviceTimeEnd} onChange={(e) => setServiceTimeEnd(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                  </div>
                 </div>
               </div>
             )}
