@@ -202,40 +202,60 @@ export function TaskDetailDialog({
           {/* Services */}
           <div>
             <Label className="mb-2 block">Servicios y montos</Label>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {categories.map((cat) => {
-                const isSelected = cat.id in selectedServices;
-                return (
-                  <div key={cat.id} className="flex items-center gap-3">
-                    <Checkbox
-                      checked={isSelected}
-                      disabled={readOnly}
-                      onCheckedChange={() => toggleCategory(cat.id)}
-                    />
-                    <span className="text-sm flex-1">{cat.name}</span>
-                    {isSelected && (
-                      <div className="relative w-28">
-                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          disabled={readOnly}
-                          value={selectedServices[cat.id] || ""}
-                          onChange={(e) =>
-                            setSelectedServices((p) => ({ ...p, [cat.id]: parseFloat(e.target.value) || 0 }))
-                          }
-                          onWheel={(e) => (e.target as HTMLElement).blur()}
-                          className="pl-6 h-8 text-sm"
-                        />
+            {readOnly ? (
+              <div className="space-y-1.5">
+                {Object.keys(selectedServices).length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic px-1">Sin servicios asignados</p>
+                ) : (
+                  Object.entries(selectedServices).map(([catId, amount]) => {
+                    const cat = categories.find((c) => c.id === catId);
+                    return (
+                      <div key={catId} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded px-3 py-1.5">
+                        <span className="text-sm font-medium text-foreground">{cat?.name || "Servicio"}</span>
+                        <span className="text-sm font-semibold tabular-nums text-emerald-700">
+                          ${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {categories.map((cat) => {
+                  const isSelected = cat.id in selectedServices;
+                  return (
+                    <div key={cat.id} className="flex items-center gap-3">
+                      <Checkbox
+                        checked={isSelected}
+                        disabled={readOnly}
+                        onCheckedChange={() => toggleCategory(cat.id)}
+                      />
+                      <span className="text-sm flex-1">{cat.name}</span>
+                      {isSelected && (
+                        <div className="relative w-28">
+                          <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            disabled={readOnly}
+                            value={selectedServices[cat.id] || ""}
+                            onChange={(e) =>
+                              setSelectedServices((p) => ({ ...p, [cat.id]: parseFloat(e.target.value) || 0 }))
+                            }
+                            onWheel={(e) => (e.target as HTMLElement).blur()}
+                            className="pl-6 h-8 text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {Object.keys(selectedServices).length > 0 && (
-              <div className="flex justify-end mt-2 text-sm font-semibold tabular-nums">
+              <div className="flex justify-end mt-2 text-sm font-semibold tabular-nums border-t pt-2">
                 Total: ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
             )}

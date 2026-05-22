@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useCrmData } from "@/hooks/useCrmData";
@@ -8,14 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2, Search, Pencil, Contact, Upload, Download } from "lucide-react";
+import { Plus, Loader2, Search, Pencil, Contact, Upload, Download, DollarSign, Activity, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Client } from "@/types/crm";
+import type { Client, Category } from "@/types/crm";
 import * as XLSX from "xlsx";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList,
+} from "recharts";
+
+const CLIENT_CHART_COLORS = [
+  "#009999", "#04427C", "#7DCB56", "#067E7E", "#3A6E99", "#A6D98F",
+];
 
 export default function ClientsPage() {
-  const { clientsWithDates: clients, tasks, loading, createClient, refetch } = useCrmData();
+  const { clientsWithDates: clients, tasks, categories, loading, createClient, refetch } = useCrmData();
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -181,6 +188,7 @@ export default function ClientsPage() {
         onOpenChange={(open) => !open && setEditClient(null)}
         client={editClient}
         tasks={tasks as any[]}
+        categories={categories}
         onSave={async (data) => {
           if (!editClient) {
             // This case handles the 'refetch' after delete if we pass dummy data
@@ -245,12 +253,14 @@ function ClientFormDialog({
   onOpenChange,
   client,
   tasks,
+  categories,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   client?: Client | null;
   tasks?: any[];
+  categories?: Category[];
   onSave: (data: { name: string; address: string; phone: string; branch: string; is_fixed: boolean }) => Promise<{ error: string | null }>;
 }) {
   const [name, setName] = useState(client?.name || "");
@@ -291,9 +301,37 @@ function ClientFormDialog({
 
   const clientTasks = client && tasks ? tasks.filter(t => t.client_id === client.id).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : [];
 
+  const totals = useMemo(() => {
+    if (!client || !clientTasks.length) return { billed: 0, pipeline: 0, serviceBreakdown: [] as { name: string; value: number }[] };
+
+    let billed = 0;
+    let pipeline = 0;
+    const byCategory: Record<string, { name: string; value: number }> = {};
+
+    for (const t of clientTasks) {
+      const amount = Number(t.total_amount) || 0;
+      if (t.status === "Servicio completado") {
+        billed += amount;
+        // Only count completed services in the per-service chart
+        for (const s of (t.services || [])) {
+          const catName = s.category?.name || "Sin categoría";
+          if (!byCategory[catName]) byCategory[catName] = { name: catName, value: 0 };
+          byCategory[catName].value += Number(s.amount_allocated) || 0;
+        }
+      } else {
+        pipeline += amount;
+      }
+    }
+
+    const serviceBreakdown = Object.values(byCategory).sort((a, b) => b.value - a.value);
+    return { billed, pipeline, serviceBreakdown };
+  }, [client, clientTasks]);
+
+  const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={client ? "sm:max-w-[700px] max-h-[90vh] overflow-y-auto" : "sm:max-w-[420px]"}>
+      <DialogContent className={client ? "sm:max-w-[900px] max-h-[90vh] overflow-y-auto" : "sm:max-w-[420px]"}>
         <DialogHeader>
           <DialogTitle>{client ? "Editar Cliente e Historial" : "Nuevo Cliente"}</DialogTitle>
         </DialogHeader>
@@ -337,37 +375,83 @@ function ClientFormDialog({
           )}
         </form>
         {client && (
-          <div className="border-l pl-6 flex flex-col h-full bg-slate-50/50 rounded-r-lg">
-            <h4 className="font-semibold text-sm mb-3">Historial de Servicios</h4>
-            <div className="flex-1 overflow-y-auto max-h-[350px] pr-2">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Fecha</TableHead>
-                    <TableHead className="text-xs">Estado</TableHead>
-                    <TableHead className="text-xs text-right">Monto</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clientTasks.length === 0 ? (
+          <div className="border-l pl-6 flex flex-col h-full bg-slate-50/50 rounded-r-lg space-y-4">
+            {/* KPI cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  Facturado
+                </div>
+                <div className="text-lg font-bold text-foreground tabular-nums mt-1">{fmtMoney(totals.billed)}</div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Activity className="h-3.5 w-3.5 text-amber-600" />
+                  En Pipeline
+                </div>
+                <div className="text-lg font-bold text-foreground tabular-nums mt-1">{fmtMoney(totals.pipeline)}</div>
+              </div>
+            </div>
+
+            {/* Per-service chart */}
+            <div>
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <BarChart3 className="h-3.5 w-3.5" /> Facturado por Servicio
+              </h4>
+              {totals.serviceBreakdown.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic px-1">Sin servicios completados aún</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(120, totals.serviceBreakdown.length * 38)}>
+                  <BarChart data={totals.serviceBreakdown} layout="vertical" margin={{ left: 10, right: 60, top: 4, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "#000" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#000", fontWeight: 600 }} axisLine={false} tickLine={false} width={110} />
+                    <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Bar dataKey="value" radius={0}>
+                      {totals.serviceBreakdown.map((_, i) => (
+                        <Cell key={i} fill={CLIENT_CHART_COLORS[i % CLIENT_CHART_COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" position="right" formatter={(v: number) => fmtMoney(v)} fontSize={10} className="font-bold" fill="#000" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* History */}
+            <div>
+              <h4 className="font-semibold text-sm mb-2">Historial de Servicios</h4>
+              <div className="overflow-y-auto max-h-[220px] pr-2">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={3} className="text-xs text-center text-muted-foreground">Sin historial</TableCell>
+                      <TableHead className="text-xs">Fecha</TableHead>
+                      <TableHead className="text-xs">Estado</TableHead>
+                      <TableHead className="text-xs text-right">Monto</TableHead>
                     </TableRow>
-                  ) : (
-                    clientTasks.map((t: any) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="text-xs whitespace-nowrap">
-                          {format(new Date(t.created_at), "dd MMM yy")}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium">{t.status}</TableCell>
-                        <TableCell className="text-xs text-right text-emerald-600 font-bold">
-                          ${Number(t.total_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {clientTasks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-xs text-center text-muted-foreground">Sin historial</TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      clientTasks.map((t: any) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="text-xs whitespace-nowrap">
+                            {format(new Date(t.created_at), "dd MMM yy")}
+                          </TableCell>
+                          <TableCell className="text-xs font-medium">{t.status}</TableCell>
+                          <TableCell className="text-xs text-right text-emerald-600 font-bold">
+                            ${Number(t.total_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         )}

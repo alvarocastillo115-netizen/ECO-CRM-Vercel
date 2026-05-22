@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { CrmTask, Client, Category, TaskService, Profile, TaskStatus } from "@/types/crm";
 
 export function useCrmData() {
+  const { user, isAdmin } = useAuth();
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -76,6 +78,13 @@ export function useCrmData() {
       status?: TaskStatus;
     }) => {
       const total = data.services.reduce((sum, s) => sum + s.amount_allocated, 0);
+
+      // If an employee creates a task without picking an assignee, assign it to
+      // themselves so it shows up in their "Servicios" view (which filters by
+      // assigned_to_user_id for non-admins).
+      const assignedToUserId =
+        data.assigned_to_user_id || (!isAdmin && user ? user.id : null);
+
       const { data: newTask, error } = await supabase
         .from("crm_tasks")
         .insert({
@@ -84,7 +93,7 @@ export function useCrmData() {
           inspection_date: data.inspection_date,
           service_date: data.service_date,
           specifications: data.specifications,
-          assigned_to_user_id: data.assigned_to_user_id,
+          assigned_to_user_id: assignedToUserId,
           total_amount: total,
           status: data.status || "Primer contacto",
         })
@@ -106,7 +115,7 @@ export function useCrmData() {
       await fetchAll();
       return { error: null };
     },
-    [fetchAll]
+    [fetchAll, isAdmin, user]
   );
 
   const updateTaskStatus = useCallback(
