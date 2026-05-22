@@ -17,11 +17,20 @@ import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 
 export default function KanbanPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const {
-    tasks, clients, categories, employees, loading,
-    createTask, updateTaskStatus, updateTask, createClient, getTasksByStatus, refetch,
+    tasks: allTasks, clients, categories, employees, loading,
+    createTask, updateTaskStatus, updateTask, createClient, refetch,
   } = useCrmData();
+
+  // Employees only see their own assigned tasks in Servicios.
+  // Admins see everything.
+  const tasks = isAdmin
+    ? allTasks
+    : allTasks.filter((t) => t.assigned_to_user_id === user?.id);
+
+  const getTasksByStatus = (status: TaskStatus) =>
+    tasks.filter((t) => t.status === status);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createDialogStatus, setCreateDialogStatus] = useState<TaskStatus>("Primer contacto");

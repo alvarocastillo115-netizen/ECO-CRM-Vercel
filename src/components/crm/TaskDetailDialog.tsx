@@ -261,38 +261,36 @@ export function TaskDetailDialog({
               </Select>
             </div>
 
-            {status === "Inspeccion" && (
+            {(status === "Inspeccion" || (readOnly && (inspectionDate || inspectionTimeStart || inspectionTimeEnd))) && (
               <div className="grid grid-cols-2 gap-3 bg-[#FF6600]/5 p-3 rounded-lg border border-[#FF6600]/20">
-                <div>
+                <div className="col-span-2">
                   <Label className="text-[#e65c00]">Fecha de cotización / inspección</Label>
                   <Input type="date" disabled={readOnly} value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="border-[#FF6600]/30 mt-1" />
                 </div>
-                <div className="col-span-2 grid grid-cols-2 gap-3 mt-2">
-                  <div>
-                    <Label className="text-[#e65c00]">Hora de inicio</Label>
-                    <Input type="time" disabled={readOnly} value={inspectionTimeStart} onChange={(e) => setInspectionTimeStart(e.target.value)} className="border-[#FF6600]/30 mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-[#e65c00]">Hora de fin</Label>
-                    <Input type="time" disabled={readOnly} value={inspectionTimeEnd} onChange={(e) => setInspectionTimeEnd(e.target.value)} className="border-[#FF6600]/30 mt-1" />
-                  </div>
-                </div>
-
-            {(status === "Servicio Agendado" || status === "Servicio en proceso") && (
-              <div className="grid grid-cols-2 gap-3 bg-[#09B549]/5 p-3 rounded-lg border border-[#09B549]/20">
                 <div>
+                  <Label className="text-[#e65c00]">Hora de inicio</Label>
+                  <Input type="time" disabled={readOnly} value={inspectionTimeStart} onChange={(e) => setInspectionTimeStart(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[#e65c00]">Hora de fin</Label>
+                  <Input type="time" disabled={readOnly} value={inspectionTimeEnd} onChange={(e) => setInspectionTimeEnd(e.target.value)} className="border-[#FF6600]/30 mt-1" />
+                </div>
+              </div>
+            )}
+
+            {(status === "Servicio Agendado" || status === "Servicio en proceso" || (readOnly && (serviceDate || serviceTimeStart || serviceTimeEnd))) && (
+              <div className="grid grid-cols-2 gap-3 bg-[#09B549]/5 p-3 rounded-lg border border-[#09B549]/20">
+                <div className="col-span-2">
                   <Label className="text-[#09B549]">Fecha de servicio</Label>
                   <Input type="date" disabled={readOnly} value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="border-[#09B549]/30 mt-1" />
                 </div>
-                <div className="col-span-2 grid grid-cols-2 gap-3 mt-2">
-                  <div>
-                    <Label className="text-[#09B549]">Hora de inicio</Label>
-                    <Input type="time" disabled={readOnly} value={serviceTimeStart} onChange={(e) => setServiceTimeStart(e.target.value)} className="border-[#09B549]/30 mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-[#09B549]">Hora de fin</Label>
-                    <Input type="time" disabled={readOnly} value={serviceTimeEnd} onChange={(e) => setServiceTimeEnd(e.target.value)} className="border-[#09B549]/30 mt-1" />
-                  </div>
+                <div>
+                  <Label className="text-[#09B549]">Hora de inicio</Label>
+                  <Input type="time" disabled={readOnly} value={serviceTimeStart} onChange={(e) => setServiceTimeStart(e.target.value)} className="border-[#09B549]/30 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[#09B549]">Hora de fin</Label>
+                  <Input type="time" disabled={readOnly} value={serviceTimeEnd} onChange={(e) => setServiceTimeEnd(e.target.value)} className="border-[#09B549]/30 mt-1" />
                 </div>
               </div>
             )}
