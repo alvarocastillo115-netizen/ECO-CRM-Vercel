@@ -82,7 +82,7 @@ export default function CalendarPage() {
   const weekData = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-    const byDateHour: Record<string, Record<number, { task: CrmTask; type: "inspection" | "service" }[]>> = {};
+    const byDateHour: Record<string, Record<number, { task: CrmTask; type: "inspection" | "service"; minutes: number }[]>> = {};
     const hourSet = new Set<number>();
 
     weekDays.forEach((day) => {
@@ -102,16 +102,25 @@ export default function CalendarPage() {
       if (!dateKey || !byDateHour[dateKey]) return;
 
       let hour = 8;
+      let minutes = 0;
       const timeStr = type === "inspection" ? t.inspection_time : t.service_time;
 
-      if (timeStr && /^\d{2}:\d{2}$/.test(timeStr)) {
-        hour = parseInt(timeStr.split(":")[0], 10);
+      // Accept "HH:MM" or "HH:MM - HH:MM" (range). Pull the start time only.
+      const match = timeStr?.match(/^(\d{1,2}):(\d{2})/);
+      if (match) {
+        hour = parseInt(match[1], 10);
+        minutes = parseInt(match[2], 10);
       } else if (timeStr === "AM") { hour = 8; }
       else if (timeStr === "PM") { hour = 14; }
 
       if (!byDateHour[dateKey][hour]) byDateHour[dateKey][hour] = [];
-      byDateHour[dateKey][hour].push({ task: t, type });
+      byDateHour[dateKey][hour].push({ task: t, type, minutes });
       hourSet.add(hour);
+    });
+
+    // Sort each cell by minutes ascending so cards are visually ordered.
+    Object.values(byDateHour).forEach((dayBuckets) => {
+      Object.values(dayBuckets).forEach((arr) => arr.sort((a, b) => a.minutes - b.minutes));
     });
 
     const hours = Array.from(hourSet).sort((a, b) => a - b);
@@ -275,19 +284,25 @@ export default function CalendarPage() {
                     const cellTasks = weekData.byDateHour[dateKey]?.[hour] || [];
                     const isToday = isSameDay(day, new Date());
                     return (
-                      <div key={dateKey} className={`border-r border-border last:border-r-0 p-1.5 min-h-[60px] ${isToday ? "bg-primary/5" : "bg-background"}`}>
+                      <div key={dateKey} className={`relative border-r border-border last:border-r-0 p-1.5 min-h-[88px] ${isToday ? "bg-primary/5" : "bg-background"}`}>
                         <div className="space-y-1">
-                          {cellTasks.map(({ task, type }) => {
+                          {cellTasks.map(({ task, type, minutes }) => {
                             // Sidebar deep teal for services, orange for inspections
                             const bgColor = type === "inspection"
                               ? "bg-[#FF6600] text-white"
                               : "bg-[#0d3b3f] text-white";
                             const timeStr = type === "inspection" ? task.inspection_time : task.service_time;
                             const timeLabel = timeStr ? timeStr.substring(0, 5) : null;
+                            // Push the card down within its hour cell proportionally to
+                            // its start minutes so e.g. 10:30 visually sits halfway
+                            // between the 10:00 and 11:00 rows. ~1px per minute against
+                            // the 64px usable height of the cell.
+                            const offsetPx = Math.round((minutes / 60) * 64);
                             return (
                               <button
                                 key={task.id}
                                 onClick={() => setSelectedTask(task)}
+                                style={offsetPx > 0 ? { marginTop: `${offsetPx}px` } : undefined}
                                 className={`w-full text-left px-2 py-1 rounded text-[11px] font-medium ${bgColor} hover:opacity-85 transition-opacity`}
                               >
                                 <div className="flex justify-between items-center gap-1">
