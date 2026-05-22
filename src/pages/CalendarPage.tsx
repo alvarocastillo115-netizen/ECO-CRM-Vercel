@@ -287,10 +287,13 @@ export default function CalendarPage() {
                       <div key={dateKey} className={`relative border-r border-border last:border-r-0 p-1.5 min-h-[88px] ${isToday ? "bg-primary/5" : "bg-background"}`}>
                         <div className="space-y-1">
                           {cellTasks.map(({ task, type, minutes }) => {
-                            // Sidebar deep teal for services, orange for inspections
-                            const bgColor = type === "inspection"
-                              ? "bg-[#FF6600] text-white"
-                              : "bg-[#0d3b3f] text-white";
+                            // Colors per status: inspection (orange), agendado (gold), en proceso (dark teal).
+                            const bgColor =
+                              type === "inspection"
+                                ? "bg-[#FF6600] text-white"
+                                : task.status === "Servicio Agendado"
+                                  ? "bg-[#e9b530] text-slate-900"
+                                  : "bg-[#0d3b3f] text-white";
                             const timeStr = type === "inspection" ? task.inspection_time : task.service_time;
                             const timeLabel = timeStr ? timeStr.substring(0, 5) : null;
                             // Push the card down within its hour cell proportionally to
@@ -343,10 +346,13 @@ export default function CalendarPage() {
                 const isToday = isSameDay(day, new Date());
 
                 const renderTask = ({ task, type }: { task: any; type: string }) => {
-                  // Sidebar deep teal for services, orange for inspections
-                  const bgColor = type === "inspection"
-                    ? "bg-[#FF6600] text-white"
-                    : "bg-[#0d3b3f] text-white";
+                  // Colors per status: inspection (orange), agendado (gold), en proceso (dark teal).
+                  const bgColor =
+                    type === "inspection"
+                      ? "bg-[#FF6600] text-white"
+                      : task.status === "Servicio Agendado"
+                        ? "bg-[#e9b530] text-slate-900"
+                        : "bg-[#0d3b3f] text-white";
                   const timeStr = type === "inspection" ? task.inspection_time : task.service_time;
                   const timeLabel = timeStr ? timeStr.substring(0, 5) : null;
                   return (
