@@ -154,15 +154,11 @@ export default function KanbanPage() {
               Vista Tabla
             </button>
           </div>
-          {isAdmin && (
-            <>
-              <div className="h-6 w-px bg-border" />
-              <Button size="sm" onClick={() => handleAddClick("Primer contacto")} className="text-sm">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Nueva Tarea
-              </Button>
-            </>
-          )}
+          <div className="h-6 w-px bg-border" />
+          <Button size="sm" onClick={() => handleAddClick("Primer contacto")} className="text-sm">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nueva Tarea
+          </Button>
         </div>
       </header>
 

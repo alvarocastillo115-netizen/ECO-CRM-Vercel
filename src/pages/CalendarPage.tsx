@@ -1,7 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { toPng } from "html-to-image";
 import { useCrmData } from "@/hooks/useCrmData";
-import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +24,6 @@ import {
 import { es } from "date-fns/locale";
 
 export default function CalendarPage() {
-  const { isAdmin } = useAuth();
   const { tasks, clients, categories, employees, loading, createTask, createClient, updateTask, updateTaskStatus } = useCrmData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week">("week");
@@ -215,12 +213,10 @@ export default function CalendarPage() {
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
             Compartir (PNG)
           </Button>
-          {isAdmin && (
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="h-9">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Tarea
-            </Button>
-          )}
+          <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Tarea
+          </Button>
         </div>
       </div>
 
