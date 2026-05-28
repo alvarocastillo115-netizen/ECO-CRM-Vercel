@@ -415,7 +415,6 @@ export default function CalendarPage() {
         clients={clients}
         categories={categories}
         employees={employees}
-        tasks={tasks}
         defaultStatus="Primer contacto"
         onCreateTask={createTask}
         onCreateClient={createClient}

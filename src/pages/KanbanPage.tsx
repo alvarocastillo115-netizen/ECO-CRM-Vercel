@@ -242,8 +242,8 @@ export default function KanbanPage() {
                     <CalendarRange className="h-3.5 w-3.5 shrink-0" />
                     {filterDateRange?.from ? (
                       filterDateRange.to && filterDateRange.to.getTime() !== filterDateRange.from.getTime()
-                        ? `${format(filterDateRange.from, "dd/MM/yyyy")} – ${format(filterDateRange.to, "dd/MM/yyyy")}`
-                        : format(filterDateRange.from, "dd/MM/yyyy")
+                        ? `${format(filterDateRange.from, "dd MMM", { locale: es })} – ${format(filterDateRange.to, "dd MMM", { locale: es })}`
+                        : format(filterDateRange.from, "dd MMM yyyy", { locale: es })
                     ) : (
                       <span>Filtrar por fecha</span>
                     )}
@@ -348,8 +348,8 @@ export default function KanbanPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1 text-xs text-slate-500">
-                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd/MM/yyyy")}{task.inspection_time ? ` | ${task.inspection_time}` : ""}</span>}
-                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd/MM/yyyy")}{task.service_time ? ` | ${task.service_time}` : ""}</span>}
+                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd MMM yyyy")}{task.inspection_time ? ` | ${task.inspection_time}` : ""}</span>}
+                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd MMM yyyy")}{task.service_time ? ` | ${task.service_time}` : ""}</span>}
                               {!task.inspection_date && !task.service_date && <span>N/A</span>}
                             </div>
                           </TableCell>
@@ -457,7 +457,6 @@ export default function KanbanPage() {
         clients={clients}
         categories={categories}
         employees={employees}
-        tasks={allTasks}
         defaultStatus={createDialogStatus}
         onCreateTask={createTask}
         onCreateClient={createClient}
@@ -469,7 +468,6 @@ export default function KanbanPage() {
         task={detailTask}
         categories={categories}
         employees={employees}
-        tasks={allTasks}
         onUpdateTask={updateTask}
         onUpdateStatus={updateTaskStatus}
         onDeleteTask={deleteTask}

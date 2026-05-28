@@ -248,8 +248,8 @@ export default function SalesHistoryPage() {
               <CalendarRange className="h-3.5 w-3.5 shrink-0" />
               {dateRange?.from ? (
                 dateRange.to && dateRange.to.getTime() !== dateRange.from.getTime()
-                  ? `${format(dateRange.from, "dd/MM/yyyy")} – ${format(dateRange.to, "dd/MM/yyyy")}`
-                  : format(dateRange.from, "dd/MM/yyyy")
+                  ? `${format(dateRange.from, "dd MMM", { locale: es })} – ${format(dateRange.to, "dd MMM", { locale: es })}`
+                  : format(dateRange.from, "dd MMM yyyy", { locale: es })
               ) : "Filtrar por fecha"}
               {dateRange?.from && (
                 <span onClick={e => { e.stopPropagation(); setDateRange(undefined); }} className="ml-1 rounded-full hover:bg-primary/20 p-0.5 cursor-pointer">
@@ -320,7 +320,7 @@ export default function SalesHistoryPage() {
                         <TableCell className="font-semibold text-foreground">{task.client?.name || "—"}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{task.client?.branch || "—"}</TableCell>
                         <TableCell className="text-sm tabular-nums text-muted-foreground">
-                          {dateStr ? format(parseISO(dateStr), "dd/MM/yyyy") : "—"}
+                          {dateStr ? format(parseISO(dateStr), "dd MMM yyyy", { locale: es }) : "—"}
                         </TableCell>
                         <TableCell className="text-sm max-w-[220px] truncate" title={serviceNames}>{serviceNames}</TableCell>
                         <TableCell className="text-right font-bold tabular-nums text-foreground">

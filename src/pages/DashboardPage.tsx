@@ -45,14 +45,14 @@ export default function DashboardPage() {
       return { start: new Date(2000, 0, 1), end: now, label: "Histórico Acumulado" };
     }
     if (filter === 'mes') {
-      return { start: startOfMonth(now), end: endOfMonth(now), label: `${format(startOfMonth(now), "dd/MM/yyyy")} - ${format(endOfMonth(now), "dd/MM/yyyy")}` };
+      return { start: startOfMonth(now), end: endOfMonth(now), label: `${format(startOfMonth(now), "dd MMM")} - ${format(endOfMonth(now), "dd MMM")}` };
     }
     if (filter === 'semana') {
       const s = startOfWeek(now, { weekStartsOn: 1 });
       const e = endOfWeek(now, { weekStartsOn: 1 });
-      return { start: s, end: e, label: `${format(s, "dd/MM/yyyy")} - ${format(e, "dd/MM/yyyy")}` };
+      return { start: s, end: e, label: `${format(s, "dd MMM")} - ${format(e, "dd MMM")}` };
     }
-    return { start: now, end: now, label: format(now, "dd/MM/yyyy") };
+    return { start: now, end: now, label: format(now, "dd MMM, yyyy") };
   };
 
   const trendRange = useMemo(() => getRange(trendFilter), [trendFilter]);
@@ -251,8 +251,8 @@ export default function DashboardPage() {
                 <CalendarRange className="h-3.5 w-3.5 shrink-0" />
                 {globalDateRange?.from ? (
                   globalDateRange.to && globalDateRange.to.getTime() !== globalDateRange.from.getTime()
-                    ? `${format(globalDateRange.from, "dd/MM/yyyy")} – ${format(globalDateRange.to, "dd/MM/yyyy")}`
-                    : format(globalDateRange.from, "dd/MM/yyyy")
+                    ? `${format(globalDateRange.from, "dd MMM", { locale: es })} – ${format(globalDateRange.to, "dd MMM", { locale: es })}`
+                    : format(globalDateRange.from, "dd MMM yyyy", { locale: es })
                 ) : "Filtrar por fecha"}
                 {globalRangeActive && (
                   <span
