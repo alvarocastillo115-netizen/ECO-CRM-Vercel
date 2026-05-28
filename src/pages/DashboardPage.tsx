@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown, CalendarRange, X } from "lucide-react";
+import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, ArrowUp, ArrowDown, CalendarRange, X, Info } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend,
@@ -45,14 +45,14 @@ export default function DashboardPage() {
       return { start: new Date(2000, 0, 1), end: now, label: "Histórico Acumulado" };
     }
     if (filter === 'mes') {
-      return { start: startOfMonth(now), end: endOfMonth(now), label: `${format(startOfMonth(now), "dd MMM")} - ${format(endOfMonth(now), "dd MMM")}` };
+      return { start: startOfMonth(now), end: endOfMonth(now), label: `${format(startOfMonth(now), "dd/MM/yyyy")} - ${format(endOfMonth(now), "dd/MM/yyyy")}` };
     }
     if (filter === 'semana') {
       const s = startOfWeek(now, { weekStartsOn: 1 });
       const e = endOfWeek(now, { weekStartsOn: 1 });
-      return { start: s, end: e, label: `${format(s, "dd MMM")} - ${format(e, "dd MMM")}` };
+      return { start: s, end: e, label: `${format(s, "dd/MM/yyyy")} - ${format(e, "dd/MM/yyyy")}` };
     }
-    return { start: now, end: now, label: format(now, "dd MMM, yyyy") };
+    return { start: now, end: now, label: format(now, "dd/MM/yyyy") };
   };
 
   const trendRange = useMemo(() => getRange(trendFilter), [trendFilter]);
@@ -79,6 +79,17 @@ export default function DashboardPage() {
     const totalRevenue = completed.reduce((s, t) => s + Number(t.total_amount), 0);
     const promisedValue = promised.reduce((s, t) => s + Number(t.total_amount), 0);
     const pipelineValue = pipeline.reduce((s, t) => s + Number(t.total_amount), 0);
+
+    // Per-status breakdowns powering the KPI tooltips.
+    const breakdownFor = (subset: typeof tasks, statuses: string[]) =>
+      statuses.map((status) => ({
+        status,
+        total: subset
+          .filter((t) => t.status === status)
+          .reduce((s, t) => s + Number(t.total_amount), 0),
+      }));
+    const promisedBreakdown = breakdownFor(promised, ["Servicio Agendado", "Servicio en proceso"]);
+    const pipelineBreakdown = breakdownFor(pipeline, ["Primer contacto", "Inspeccion", "Cotizacion"]);
 
     // Revenue by service category (completed)
     const revByCat: Record<string, number> = {};
@@ -200,6 +211,7 @@ export default function DashboardPage() {
 
     return {
       totalRevenue, promisedValue, pipelineValue, activeCount: active.length,
+      promisedBreakdown, pipelineBreakdown,
       serviceData, top5Services, bottom5Services,
       buildPieData, weeklyData, scheduledData, topClients, sellerData
     };
@@ -239,8 +251,8 @@ export default function DashboardPage() {
                 <CalendarRange className="h-3.5 w-3.5 shrink-0" />
                 {globalDateRange?.from ? (
                   globalDateRange.to && globalDateRange.to.getTime() !== globalDateRange.from.getTime()
-                    ? `${format(globalDateRange.from, "dd MMM", { locale: es })} – ${format(globalDateRange.to, "dd MMM", { locale: es })}`
-                    : format(globalDateRange.from, "dd MMM yyyy", { locale: es })
+                    ? `${format(globalDateRange.from, "dd/MM/yyyy")} – ${format(globalDateRange.to, "dd/MM/yyyy")}`
+                    : format(globalDateRange.from, "dd/MM/yyyy")
                 ) : "Filtrar por fecha"}
                 {globalRangeActive && (
                   <span
@@ -273,8 +285,22 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KpiCard label="Ventas Cobradas" value={fmtMoney(stats.totalRevenue)} icon={DollarSign} color="primary" />
-        <KpiCard label="Ventas Pendientes" value={fmtMoney(stats.promisedValue)} icon={DollarSign} color="info" />
-        <KpiCard label="Oportunidades" value={fmtMoney(stats.pipelineValue)} icon={TrendingUp} color="warning" />
+        <KpiCard
+          label="Ventas Pendientes"
+          value={fmtMoney(stats.promisedValue)}
+          icon={DollarSign}
+          color="info"
+          breakdown={stats.promisedBreakdown}
+          fmtMoney={fmtMoney}
+        />
+        <KpiCard
+          label="Oportunidades"
+          value={fmtMoney(stats.pipelineValue)}
+          icon={TrendingUp}
+          color="warning"
+          breakdown={stats.pipelineBreakdown}
+          fmtMoney={fmtMoney}
+        />
         <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="primary" />
       </div>
 
@@ -459,9 +485,23 @@ export default function DashboardPage() {
   );
 }
 
-function KpiCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  breakdown,
+  fmtMoney,
+}: {
+  label: string;
+  value: string;
+  icon: any;
+  color: string;
+  breakdown?: { status: string; total: number }[];
+  fmtMoney?: (v: number) => string;
+}) {
   return (
-    <Card className="shadow-card">
+    <Card className="shadow-card relative">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -472,6 +512,34 @@ function KpiCard({ label, value, icon: Icon, color }: { label: string; value: st
             <Icon className={`h-5 w-5 text-${color}`} />
           </div>
         </div>
+        {breakdown && breakdown.length > 0 && (
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Desglose por estatus"
+                className="absolute bottom-2 left-2 text-amber-500 hover:text-amber-600 transition-colors"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className="p-0 max-w-xs">
+              <div className="p-3 space-y-2">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Estatus incluidos
+                </div>
+                <div className="space-y-1.5">
+                  {breakdown.map((b) => (
+                    <div key={b.status} className="flex items-center justify-between gap-4 text-xs">
+                      <span className="font-medium">{b.status}</span>
+                      <span className="font-semibold tabular-nums">{fmtMoney ? fmtMoney(b.total) : `$${b.total.toFixed(2)}`}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        )}
       </CardContent>
     </Card>
   );

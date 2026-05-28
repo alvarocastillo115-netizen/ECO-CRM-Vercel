@@ -440,7 +440,7 @@ function ClientFormDialog({
                       clientTasks.map((t: any) => (
                         <TableRow key={t.id}>
                           <TableCell className="text-xs whitespace-nowrap">
-                            {format(new Date(t.created_at), "dd MMM yy")}
+                            {format(new Date(t.created_at), "dd/MM/yyyy")}
                           </TableCell>
                           <TableCell className="text-xs font-medium">{t.status}</TableCell>
                           <TableCell className="text-xs text-right text-emerald-600 font-bold">

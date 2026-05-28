@@ -5,7 +5,12 @@ import { CrmKanbanColumn } from "@/components/crm/CrmKanbanColumn";
 import { CreateTaskDialog } from "@/components/crm/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/crm/TaskDetailDialog";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, RefreshCw, Loader2, CalendarRange, X } from "lucide-react";
+import { Plus, RefreshCw, Loader2, CalendarRange, X, Trash2, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -20,8 +25,10 @@ export default function KanbanPage() {
   const { isAdmin, user } = useAuth();
   const {
     tasks: allTasks, clients, categories, employees, loading,
-    createTask, updateTaskStatus, updateTask, createClient, refetch,
+    createTask, updateTaskStatus, updateTask, deleteTask, createClient, refetch,
   } = useCrmData();
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Employees only see their own assigned tasks in Servicios.
   // Admins see everything.
@@ -235,8 +242,8 @@ export default function KanbanPage() {
                     <CalendarRange className="h-3.5 w-3.5 shrink-0" />
                     {filterDateRange?.from ? (
                       filterDateRange.to && filterDateRange.to.getTime() !== filterDateRange.from.getTime()
-                        ? `${format(filterDateRange.from, "dd MMM", { locale: es })} – ${format(filterDateRange.to, "dd MMM", { locale: es })}`
-                        : format(filterDateRange.from, "dd MMM yyyy", { locale: es })
+                        ? `${format(filterDateRange.from, "dd/MM/yyyy")} – ${format(filterDateRange.to, "dd/MM/yyyy")}`
+                        : format(filterDateRange.from, "dd/MM/yyyy")
                     ) : (
                       <span>Filtrar por fecha</span>
                     )}
@@ -294,12 +301,13 @@ export default function KanbanPage() {
                     <TableHead>Monto Total</TableHead>
                     <TableHead>Fechas Programadas</TableHead>
                     <TableHead>Empleado</TableHead>
+                    {isAdmin && <TableHead className="w-[60px] text-center">Acciones</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTableTasks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No hay tareas que coincidan con los filtros</TableCell>
+                      <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No hay tareas que coincidan con los filtros</TableCell>
                     </TableRow>
                   ) : (
                     filteredTableTasks.map((task) => {
@@ -340,14 +348,27 @@ export default function KanbanPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1 text-xs text-slate-500">
-                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd MMM yyyy")}{task.inspection_time ? ` | ${task.inspection_time}` : ""}</span>}
-                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd MMM yyyy")}{task.service_time ? ` | ${task.service_time}` : ""}</span>}
+                              {task.inspection_date && <span>Insp: {format(new Date(task.inspection_date + "T12:00:00"), "dd/MM/yyyy")}{task.inspection_time ? ` | ${task.inspection_time}` : ""}</span>}
+                              {task.service_date && <span className="text-emerald-600 font-medium">Serv: {format(new Date(task.service_date + "T12:00:00"), "dd/MM/yyyy")}{task.service_time ? ` | ${task.service_time}` : ""}</span>}
                               {!task.inspection_date && !task.service_date && <span>N/A</span>}
                             </div>
                           </TableCell>
                           <TableCell className="text-xs">
                             {employee ? (employee.full_name || employee.email) : "Sin asignar"}
                           </TableCell>
+                          {isAdmin && (
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => { e.stopPropagation(); setDeleteTaskId(task.id); }}
+                                title="Eliminar tarea"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })
@@ -357,7 +378,77 @@ export default function KanbanPage() {
             </div>
           </div>
         )}
+
+        {/* Floating totals panel: per-status sums of the currently visible
+            (filtered) table rows. Only shown in table view with at least one
+            row, so totals always reflect what the user sees. */}
+        {viewMode === "table" && filteredTableTasks.length > 0 && (() => {
+          const totalsByStatus = new Map<TaskStatus, number>();
+          for (const t of filteredTableTasks) {
+            totalsByStatus.set(t.status, (totalsByStatus.get(t.status) || 0) + Number(t.total_amount || 0));
+          }
+          const entries = STATUS_COLUMNS
+            .filter((c) => totalsByStatus.has(c.id))
+            .map((c) => ({ status: c.id, title: c.title, color: c.color, total: totalsByStatus.get(c.id) || 0 }));
+          const grand = entries.reduce((s, e) => s + e.total, 0);
+          return (
+            <div className="fixed bottom-4 right-4 z-30 bg-white border shadow-xl rounded-lg p-3 min-w-[240px] max-w-xs">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Totales filtrados</div>
+              <div className="space-y-1.5">
+                {entries.map((e) => (
+                  <div key={e.status} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: e.color }} />
+                      <span className="truncate font-medium">{e.title}</span>
+                    </span>
+                    <span className="font-semibold tabular-nums whitespace-nowrap">${e.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs">
+                <span className="font-bold uppercase tracking-wider text-[10px]">Total</span>
+                <span className="font-bold tabular-nums">${grand.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
+
+      <AlertDialog open={!!deleteTaskId} onOpenChange={(open) => { if (!open) setDeleteTaskId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              ¿Eliminar esta tarea?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La tarea y sus servicios asociados se eliminarán permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!deleteTaskId) return;
+                setDeleting(true);
+                const { error } = await deleteTask(deleteTaskId);
+                setDeleting(false);
+                setDeleteTaskId(null);
+                if (error) {
+                  toast({ title: "Error", description: error, variant: "destructive" });
+                } else {
+                  toast({ title: "Tarea eliminada" });
+                }
+              }}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Dialogs */}
       <CreateTaskDialog
@@ -366,6 +457,7 @@ export default function KanbanPage() {
         clients={clients}
         categories={categories}
         employees={employees}
+        tasks={allTasks}
         defaultStatus={createDialogStatus}
         onCreateTask={createTask}
         onCreateClient={createClient}
@@ -377,8 +469,10 @@ export default function KanbanPage() {
         task={detailTask}
         categories={categories}
         employees={employees}
+        tasks={allTasks}
         onUpdateTask={updateTask}
         onUpdateStatus={updateTaskStatus}
+        onDeleteTask={deleteTask}
       />
     </div>
   );

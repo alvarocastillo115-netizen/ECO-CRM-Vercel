@@ -195,6 +195,16 @@ export function useCrmData() {
     [fetchAll]
   );
 
+  const deleteTask = useCallback(
+    async (taskId: string) => {
+      // task_services are removed via ON DELETE CASCADE in the schema.
+      const { error } = await supabase.from("crm_tasks").delete().eq("id", taskId);
+      if (!error) await fetchAll();
+      return { error: error?.message || null };
+    },
+    [fetchAll]
+  );
+
   const createClient = useCallback(
     async (data: { name: string; address: string; phone: string; branch?: string; is_fixed?: boolean }) => {
       const { data: newClient, error } = await supabase
@@ -249,6 +259,7 @@ export function useCrmData() {
     createTask,
     updateTaskStatus,
     updateTask,
+    deleteTask,
     createClient,
     createCategory,
     updateCategory,

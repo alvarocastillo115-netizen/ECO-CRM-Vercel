@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, DollarSign, Loader2, Search, Check, ChevronDown } from "lucide-react";
-import { type Category, type Client, type Profile, type TaskStatus, STATUS_COLUMNS } from "@/types/crm";
+import { type Category, type Client, type CrmTask, type Profile, type TaskStatus, STATUS_COLUMNS } from "@/types/crm";
 import { toast } from "@/hooks/use-toast";
+import { findScheduleConflict, buildTimeString } from "@/lib/schedule-conflicts";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface CreateTaskDialogProps {
   clients: Client[];
   categories: Category[];
   employees: Profile[];
+  tasks?: CrmTask[];
   defaultStatus: TaskStatus;
   onCreateTask: (data: {
     client_id: string;
@@ -38,6 +40,7 @@ export function CreateTaskDialog({
   clients,
   categories,
   employees,
+  tasks = [],
   defaultStatus,
   onCreateTask,
   onCreateClient,
@@ -142,6 +145,26 @@ export function CreateTaskDialog({
 
     if (!finalClientId) {
       toast({ title: "Error", description: "Selecciona un cliente", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+
+    // Schedule-conflict check: block save if proposed inspection/service slot
+    // overlaps an existing task on the same date.
+    const inspectionTimeStr = buildTimeString(inspectionTimeStart, inspectionTimeEnd);
+    const serviceTimeStr = buildTimeString(serviceTimeStart, serviceTimeEnd);
+    const inspectionConflict = inspectionDate
+      ? findScheduleConflict({ date: inspectionDate, time: inspectionTimeStr }, tasks)
+      : null;
+    const serviceConflict = serviceDate
+      ? findScheduleConflict({ date: serviceDate, time: serviceTimeStr }, tasks)
+      : null;
+    if (inspectionConflict || serviceConflict) {
+      toast({
+        title: "Fecha y hora ocupadas",
+        description: "Por favor selecciona una nueva hora o una nueva fecha.",
+        variant: "destructive",
+      });
       setSubmitting(false);
       return;
     }

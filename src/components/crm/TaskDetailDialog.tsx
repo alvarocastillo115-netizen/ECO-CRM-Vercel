@@ -11,11 +11,13 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DollarSign, Loader2, AlertTriangle } from "lucide-react";
+import { DollarSign, Loader2, AlertTriangle, Trash2 } from "lucide-react";
 import type { CrmTask, Category, Profile, TaskStatus } from "@/types/crm";
 import { STATUS_COLUMNS } from "@/types/crm";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { findScheduleConflict, buildTimeString } from "@/lib/schedule-conflicts";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TaskDetailDialogProps {
   open: boolean;
@@ -23,8 +25,10 @@ interface TaskDetailDialogProps {
   task: CrmTask | null;
   categories: Category[];
   employees: Profile[];
+  tasks?: CrmTask[];
   onUpdateTask: (taskId: string, data: any) => Promise<{ error: string | null }>;
   onUpdateStatus: (taskId: string, status: TaskStatus, keepAnEyeData?: any) => Promise<{ error: string | null }>;
+  onDeleteTask?: (taskId: string) => Promise<{ error: string | null }>;
   readOnly?: boolean;
 }
 
@@ -34,13 +38,18 @@ export function TaskDetailDialog({
   task,
   categories,
   employees,
+  tasks = [],
   onUpdateTask,
   onUpdateStatus,
+  onDeleteTask,
   readOnly = false,
 }: TaskDetailDialogProps) {
+  const { isAdmin } = useAuth();
   const [status, setStatus] = useState<TaskStatus>("Primer contacto");
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<TaskStatus | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   const [specifications, setSpecifications] = useState("");
   const [inspectionDate, setInspectionDate] = useState("");
@@ -94,14 +103,35 @@ export function TaskDetailDialog({
 
   const handleSave = async (overrideStatus?: TaskStatus) => {
     if (!task) return;
+
+    const inspectionTimeStr = buildTimeString(inspectionTimeStart, inspectionTimeEnd);
+    const serviceTimeStr = buildTimeString(serviceTimeStart, serviceTimeEnd);
+
+    // Block save when the proposed slot overlaps another task on the same date.
+    // Exclude the current task so simply re-saving the same data doesn't trip it.
+    const inspectionConflict = inspectionDate
+      ? findScheduleConflict({ date: inspectionDate, time: inspectionTimeStr }, tasks, task.id)
+      : null;
+    const serviceConflict = serviceDate
+      ? findScheduleConflict({ date: serviceDate, time: serviceTimeStr }, tasks, task.id)
+      : null;
+    if (inspectionConflict || serviceConflict) {
+      toast({
+        title: "Fecha y hora ocupadas",
+        description: "Por favor selecciona una nueva hora o una nueva fecha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
 
     const updateData: any = {
       specifications,
       inspection_date: inspectionDate || null,
-      inspection_time: (inspectionTimeStart || inspectionTimeEnd) ? `${inspectionTimeStart}${inspectionTimeStart && inspectionTimeEnd ? ' - ' : ''}${inspectionTimeEnd}` : "",
+      inspection_time: inspectionTimeStr,
       service_date: serviceDate || null,
-      service_time: (serviceTimeStart || serviceTimeEnd) ? `${serviceTimeStart}${serviceTimeStart && serviceTimeEnd ? ' - ' : ''}${serviceTimeEnd}` : "",
+      service_time: serviceTimeStr,
       assigned_to_user_id: assignedTo || null,
       status: typeof overrideStatus === "string" ? overrideStatus : status,
       services: Object.entries(selectedServices).map(([category_id, amount_allocated]) => ({
@@ -130,7 +160,7 @@ export function TaskDetailDialog({
             {task.client?.name || "Tarea"}
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
-            Creada {format(new Date(task.created_at), "MMM d, yyyy")}
+            Creada {format(new Date(task.created_at), "dd/MM/yyyy")}
           </p>
         </DialogHeader>
 
@@ -317,11 +347,61 @@ export function TaskDetailDialog({
           </div>
 
           {!readOnly && (
-            <Button onClick={() => handleSave()} className="w-full" disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Guardar cambios
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={() => handleSave()} className="w-full" disabled={saving || deleting}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Guardar cambios
+              </Button>
+              {isAdmin && onDeleteTask && (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={saving || deleting}
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar tarea
+                </Button>
+              )}
+            </div>
           )}
+
+          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  ¿Eliminar esta tarea?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. La tarea y sus servicios asociados se eliminarán permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90"
+                  disabled={deleting}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (!task || !onDeleteTask) return;
+                    setDeleting(true);
+                    const { error } = await onDeleteTask(task.id);
+                    setDeleting(false);
+                    setShowDeleteConfirm(false);
+                    if (error) {
+                      toast({ title: "Error", description: error, variant: "destructive" });
+                    } else {
+                      toast({ title: "Tarea eliminada" });
+                      onOpenChange(false);
+                    }
+                  }}
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Eliminar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </DialogContent>
     </Dialog>
