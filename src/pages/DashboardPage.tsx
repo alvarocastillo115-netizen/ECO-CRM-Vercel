@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, CalendarRange, X, Info } from "lucide-react";
+import { DollarSign, TrendingUp, ClipboardList, Users, CalendarRange, X, Info } from "lucide-react";
 import {
-  Cell, ResponsiveContainer,
+  ResponsiveContainer,
   XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
-  AreaChart, Area, LabelList
+  AreaChart, Area,
 } from "recharts";
 import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, getDay, startOfDay, endOfDay } from "date-fns";
@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 import { getSalesBySellerData } from "@/lib/dashboard-utils";
 import { VentasPorVendedor, type VendorData } from "@/components/dashboard/VentasPorVendedor";
+import { RevenueAnalysisCard } from "@/components/dashboard/RevenueAnalysisCard";
 import type { DateRange } from "react-day-picker";
 
 const CHART_COLORS = [
@@ -209,6 +210,9 @@ export default function DashboardPage() {
     return { name: seller, data: services as Record<string, number> };
   });
 
+  // topClients is already aggregated revenue per client (completed only).
+  const clientRevenueData = stats.topClients.map((c) => ({ name: c.name, value: c.total }));
+
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -284,148 +288,17 @@ export default function DashboardPage() {
         <KpiCard label="Tareas Activas" value={String(stats.activeCount)} icon={ClipboardList} color="primary" />
       </div>
 
-      {/* Ventas por Servicio */}
-      <Card className="shadow-card border-none bg-white">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-slate-500" /> Ventas por Servicio
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stats.serviceData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(320, stats.serviceData.length * 38 + 40)}>
-              <BarChart data={stats.serviceData} layout="vertical" margin={{ top: 10, right: 80, left: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={true} vertical={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600, fontFamily: "inherit" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `$${v.toLocaleString()}`}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 12, fill: "#1e293b", fontWeight: 600, fontFamily: "inherit" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={170}
-                />
-                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'rgba(0, 0, 0, 0.02)' }} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)', fontFamily: "inherit" }} />
-                <Bar dataKey="value" fill="#6E7A8A" radius={[0, 4, 4, 0]} maxBarSize={26}>
-                  <LabelList dataKey="value" position="right" formatter={(v: number) => fmtMoney(v)} fontSize={11} className="font-bold fill-slate-700" style={{ fontFamily: "inherit" }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <EmptyChart />}
-        </CardContent>
-      </Card>
+      <RevenueAnalysisCard
+        title="Análisis de Ingresos por Servicio"
+        data={stats.serviceData}
+        topMetricLabel="Top Servicio"
+      />
 
-      {/* Análisis de Ingresos por Servicio: 3 metric cards + bar chart agrupado por importancia */}
-      <Card className="shadow-card border-none bg-white">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-slate-500" /> Análisis de Ingresos por Servicio
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {(() => {
-            const data = stats.serviceData;
-            const total = data.reduce((s, d) => s + d.value, 0);
-            const topService = data[0];
-            const top3Sum = data.slice(0, 3).reduce((s, d) => s + d.value, 0);
-            const top3Pct = total > 0 ? (top3Sum / total) * 100 : 0;
-
-            // Color groups by rank: top 3 green, ranks 4-6 blue, 7-9 amber, rest gray.
-            const colorFor = (i: number) =>
-              i < 3 ? "#16A34A" : i < 6 ? "#2563EB" : i < 9 ? "#F59E0B" : "#94A3B8";
-
-            const chartData = data.map((d) => ({
-              ...d,
-              pct: total > 0 ? (d.value / total) * 100 : 0,
-            }));
-
-            const fmtAxis = (v: number) => {
-              if (Math.abs(v) >= 1000) return `$${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k`;
-              return `$${v}`;
-            };
-
-            return (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-lg border bg-gradient-to-br from-emerald-50 to-white p-4">
-                    <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Total Venta</p>
-                    <p className="text-xl font-bold text-slate-900 tabular-nums mt-1">{fmtMoney(total)}</p>
-                  </div>
-                  <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4">
-                    <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Top Servicio</p>
-                    <p className="text-sm font-bold text-slate-900 truncate mt-1" title={topService?.name}>
-                      {topService?.name || "—"}
-                    </p>
-                    <p className="text-xs font-semibold text-slate-600 tabular-nums">{topService ? fmtMoney(topService.value) : "—"}</p>
-                  </div>
-                  <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-white p-4">
-                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">% Top 3</p>
-                    <p className="text-xl font-bold text-slate-900 tabular-nums mt-1">{top3Pct.toFixed(1)}%</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">de la venta total</p>
-                  </div>
-                </div>
-
-                {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 36 + 40)}>
-                    <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 70, left: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={true} vertical={false} />
-                      <XAxis
-                        type="number"
-                        tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
-                        axisLine={false}
-                        tickLine={false}
-                        tickFormatter={fmtAxis}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        tick={{ fontSize: 12, fill: "#1e293b", fontWeight: 600 }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={170}
-                      />
-                      <Tooltip
-                        cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                        contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                        formatter={(_v: number, _n: string, item: any) => {
-                          const d = item?.payload;
-                          if (!d) return ["", ""];
-                          return [`${fmtMoney(d.value)} · ${d.pct.toFixed(1)}%`, "Ingresos"];
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={24}>
-                        {chartData.map((_d, i) => (
-                          <Cell key={i} fill={colorFor(i)} />
-                        ))}
-                        <LabelList
-                          dataKey="value"
-                          position="right"
-                          formatter={(v: number) => fmtMoney(v)}
-                          fontSize={11}
-                          className="font-bold fill-slate-700"
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : <EmptyChart />}
-
-                <div className="flex flex-wrap items-center justify-end gap-4 pt-2 border-t text-[11px] text-slate-600">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#16A34A" }} /> Top 3</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#2563EB" }} /> Rango medio</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#F59E0B" }} /> Menores</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#94A3B8" }} /> Mínimos</span>
-                </div>
-              </>
-            );
-          })()}
-        </CardContent>
-      </Card>
+      <RevenueAnalysisCard
+        title="Análisis de Ingresos por Cliente"
+        data={clientRevenueData}
+        topMetricLabel="Top Cliente"
+      />
 
       {/* Small-multiples Ventas por Vendedor */}
       <VentasPorVendedor vendors={vendorsForChart} />

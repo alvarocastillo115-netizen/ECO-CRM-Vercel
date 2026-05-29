@@ -64,7 +64,10 @@ export default function CalendarPage() {
   const tasksByDate = useMemo(() => {
     const map: Record<string, { task: CrmTask, type: "inspection" | "service" }[]> = {};
     tasks.forEach((t) => {
-      // Only show: Inspeccion (on inspection_date) and Servicio Agendado / en proceso (on service_date)
+      // Show: Inspeccion (on inspection_date), Servicio Agendado / en proceso
+      // (on service_date), and Revisar Urgente on whichever date is set
+      // (prefer service_date so the task lands on the day it was actually
+      // expected to happen).
       if (t.status === "Inspeccion" && t.inspection_date) {
         const key = t.inspection_date;
         if (!map[key]) map[key] = [];
@@ -73,6 +76,10 @@ export default function CalendarPage() {
         const key = t.service_date;
         if (!map[key]) map[key] = [];
         map[key].push({ task: t, type: "service" });
+      } else if (t.status === "Revisar Urgente" && (t.service_date || t.inspection_date)) {
+        const key = (t.service_date || t.inspection_date) as string;
+        if (!map[key]) map[key] = [];
+        map[key].push({ task: t, type: t.service_date ? "service" : "inspection" });
       }
     });
     return map;
@@ -97,6 +104,9 @@ export default function CalendarPage() {
         dateKey = t.inspection_date; type = "inspection";
       } else if ((t.status === "Servicio Agendado" || t.status === "Servicio en proceso") && t.service_date) {
         dateKey = t.service_date; type = "service";
+      } else if (t.status === "Revisar Urgente" && (t.service_date || t.inspection_date)) {
+        dateKey = (t.service_date || t.inspection_date) as string;
+        type = t.service_date ? "service" : "inspection";
       }
 
       if (!dateKey || !byDateHour[dateKey]) return;
@@ -287,13 +297,19 @@ export default function CalendarPage() {
                       <div key={dateKey} className={`relative border-r border-border last:border-r-0 p-1.5 min-h-[88px] ${isToday ? "bg-primary/5" : "bg-background"}`}>
                         <div className="space-y-1">
                           {cellTasks.map(({ task, type, minutes }) => {
-                            // Colors per status: inspection (orange), agendado (gold), en proceso (dark teal).
+                            // Pastel colors per status with dark text for contrast.
+                            // Revisar Urgente uses pink-red even if it originally came from
+                            // inspection or service date.
                             const bgColor =
-                              type === "inspection"
-                                ? "bg-[#FF6600] text-white"
-                                : task.status === "Servicio Agendado"
-                                  ? "bg-[#e9b530] text-slate-900"
-                                  : "bg-[#0d3b3f] text-white";
+                              task.status === "Revisar Urgente"
+                                ? "bg-[#ED9CAD] text-slate-900"
+                                : task.status === "Inspeccion"
+                                  ? "bg-[#FEF9C3] text-slate-900"
+                                  : task.status === "Servicio Agendado"
+                                    ? "bg-[#EDE9FE] text-slate-900"
+                                    : task.status === "Servicio en proceso"
+                                      ? "bg-[#DCFCE7] text-slate-900"
+                                      : "bg-slate-100 text-slate-900";
                             const timeStr = type === "inspection" ? task.inspection_time : task.service_time;
                             const timeLabel = timeStr ? timeStr.substring(0, 5) : null;
                             // Push the card down within its hour cell proportionally to
@@ -346,13 +362,17 @@ export default function CalendarPage() {
                 const isToday = isSameDay(day, new Date());
 
                 const renderTask = ({ task, type }: { task: any; type: string }) => {
-                  // Colors per status: inspection (orange), agendado (gold), en proceso (dark teal).
+                  // Pastel colors per status with dark text for contrast.
                   const bgColor =
-                    type === "inspection"
-                      ? "bg-[#FF6600] text-white"
-                      : task.status === "Servicio Agendado"
-                        ? "bg-[#e9b530] text-slate-900"
-                        : "bg-[#0d3b3f] text-white";
+                    task.status === "Revisar Urgente"
+                      ? "bg-[#ED9CAD] text-slate-900"
+                      : task.status === "Inspeccion"
+                        ? "bg-[#FEF9C3] text-slate-900"
+                        : task.status === "Servicio Agendado"
+                          ? "bg-[#EDE9FE] text-slate-900"
+                          : task.status === "Servicio en proceso"
+                            ? "bg-[#DCFCE7] text-slate-900"
+                            : "bg-slate-100 text-slate-900";
                   const timeStr = type === "inspection" ? task.inspection_time : task.service_time;
                   const timeLabel = timeStr ? timeStr.substring(0, 5) : null;
                   return (

@@ -49,7 +49,13 @@ export function VentasPorVendedor({ vendors }: Props) {
     let max = 0;
 
     const withTotals = vendors.map((v) => {
-      const entries = Object.entries(v.data).filter(([, val]) => val > 0);
+      // Coerce to number defensively and drop anything that isn't a positive sale.
+      // Some upstream rows can carry $0 service entries from completed tasks
+      // that included a category without an allocated amount, and those would
+      // otherwise show as zero-width bars with a bare label.
+      const entries = Object.entries(v.data)
+        .map(([k, raw]) => [k, Number(raw)] as [string, number])
+        .filter(([, val]) => Number.isFinite(val) && val > 0);
       const total = entries.reduce((s, [, val]) => s + val, 0);
       for (const [name, val] of entries) {
         if (!(name in colors)) {
