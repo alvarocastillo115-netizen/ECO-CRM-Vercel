@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DollarSign, TrendingUp, ClipboardList, Users, BarChart3, CalendarRange, X, Info } from "lucide-react";
 import {
   Cell, ResponsiveContainer,
-  XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend,
+  XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
   AreaChart, Area, LabelList
 } from "recharts";
 import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { es } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 import { getSalesBySellerData } from "@/lib/dashboard-utils";
+import { VentasPorVendedor, type VendorData } from "@/components/dashboard/VentasPorVendedor";
 import type { DateRange } from "react-day-picker";
 
 const CHART_COLORS = [
@@ -202,6 +203,12 @@ export default function DashboardPage() {
 
   const fmtMoney = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
+  // sellerData is `{ seller, [serviceName]: amount }[]` — shape it for VentasPorVendedor.
+  const vendorsForChart: VendorData[] = stats.sellerData.map((row: any) => {
+    const { seller, ...services } = row;
+    return { name: seller, data: services as Record<string, number> };
+  });
+
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -279,19 +286,10 @@ export default function DashboardPage() {
 
       {/* Ventas por Servicio */}
       <Card className="shadow-card border-none bg-white">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-slate-500" /> Ventas por Servicio
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 rounded-full border border-slate-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-600 tracking-wide uppercase">Spotter</span>
-            </div>
-            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
-              <span className="text-sm font-bold tracking-tight">•••</span>
-            </button>
-          </div>
         </CardHeader>
         <CardContent>
           {stats.serviceData.length > 0 ? (
@@ -429,53 +427,8 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Ventas por Vendedor y Servicio */}
-      <Card className="shadow-card border-none bg-white">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
-            <Users className="h-4 w-4 text-slate-500" /> Ventas por Vendedor y Servicio
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 rounded-full border border-slate-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-600 tracking-wide uppercase">Spotter</span>
-            </div>
-            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
-              <span className="text-sm font-bold tracking-tight">•••</span>
-            </button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {stats.sellerData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={stats.sellerData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis 
-                  dataKey="seller" 
-                  tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }} 
-                  axisLine={false} 
-                  tickLine={false} 
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tickFormatter={(v) => `$${v.toLocaleString()}`}
-                />
-                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }} />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '15px' }} 
-                  iconType="circle"
-                  formatter={(value) => <span className="text-xs text-slate-600 font-semibold">{value}</span>} 
-                />
-                {stats.serviceData.map((s, i) => (
-                  <Bar key={s.name} dataKey={s.name} stackId="a" fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[2, 2, 0, 0]} maxBarSize={45} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <EmptyChart />}
-        </CardContent>
-      </Card>
+      {/* Small-multiples Ventas por Vendedor */}
+      <VentasPorVendedor vendors={vendorsForChart} />
 
       {/* Tendencia Semanal de Ventas (Refactored to Image 1 style) */}
       <Card className="shadow-card border-none bg-white">
