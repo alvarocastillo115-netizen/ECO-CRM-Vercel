@@ -20,12 +20,14 @@ import { getTrendsData, getSalesBySellerData } from "@/lib/dashboard-utils";
 import type { DateRange } from "react-day-picker";
 
 const CHART_COLORS = [
-  "#009999", // Teal/Cyan principal
-  "#04427C", // Dark Blue
-  "#7DCB56", // Light Green
-  "#067E7E", // Darker Teal
-  "#3A6E99", // Light/Muted Blue
-  "#A6D98F", // Lighter Green
+  "#72B5E8", // Sky Blue (matching Image 1)
+  "#477EAE", // Slate/Steel Blue
+  "#A4E28A", // Light Green
+  "#4A9C39", // Forest Green
+  "#74C455", // Lime Green
+  "#FED788", // Pale Yellow
+  "#DF5129", // Red-Orange
+  "#FA913B", // Vibrant Orange
 ];
 
 
@@ -305,25 +307,44 @@ export default function DashboardPage() {
       </div>
 
       {/* Ventas por Servicio */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" /> Ventas por Servicio
+      <Card className="shadow-card border-none bg-white">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-slate-500" /> Ventas por Servicio
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 rounded-full border border-slate-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-600 tracking-wide uppercase">Spotter</span>
+            </div>
+            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
+              <span className="text-sm font-bold tracking-tight">•••</span>
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           {stats.serviceData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.serviceData} layout="vertical" margin={{ left: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis type="number" tick={{ fontSize: 13, fill: "#000", fontWeight: 700, fontFamily: "inherit" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#000", fontWeight: 700, fontFamily: "inherit" }} axisLine={false} tickLine={false} width={120} />
-                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily: "inherit" }} />
-                <Bar dataKey="value" radius={0}>
-                  {stats.serviceData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                  <LabelList dataKey="value" position="right" formatter={(v: number) => fmtMoney(v)} fontSize={12} className="font-bold" fill="#000" style={{ fontFamily: "inherit" }} />
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={stats.serviceData} margin={{ top: 25, right: 10, left: 10, bottom: 15 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11, fill: "#475569", fontWeight: 600, fontFamily: "inherit" }} 
+                  axisLine={false} 
+                  tickLine={false}
+                  angle={-10}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600, fontFamily: "inherit" }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(v) => `$${v.toLocaleString()}`}
+                />
+                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'rgba(0, 0, 0, 0.02)' }} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)', fontFamily: "inherit" }} />
+                <Bar dataKey="value" fill="#6E7A8A" radius={[4, 4, 0, 0]} maxBarSize={45}>
+                  <LabelList dataKey="value" position="top" formatter={(v: number) => fmtMoney(v)} fontSize={11} className="font-bold fill-slate-700" style={{ fontFamily: "inherit" }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -361,24 +382,47 @@ export default function DashboardPage() {
         <PieCard title="Pipeline" data={piePipeline} fmtMoney={fmtMoney} />
       </div>
 
-      {/* New Chart: Ventas por Vendedor y Servicio */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" /> Ventas por Vendedor y Servicio
+      {/* Ventas por Vendedor y Servicio */}
+      <Card className="shadow-card border-none bg-white">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
+            <Users className="h-4 w-4 text-slate-500" /> Ventas por Vendedor y Servicio
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 rounded-full border border-slate-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-600 tracking-wide uppercase">Spotter</span>
+            </div>
+            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
+              <span className="text-sm font-bold tracking-tight">•••</span>
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           {stats.sellerData.length > 0 ? (
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={stats.sellerData} layout="vertical" margin={{ left: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis type="number" tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} />
-                <YAxis type="category" dataKey="seller" tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} width={120} />
-                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} formatter={(value) => <span style={{ color: '#000', fontWeight: 700 }}>{value}</span>} />
+              <BarChart data={stats.sellerData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis 
+                  dataKey="seller" 
+                  tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(v) => `$${v.toLocaleString()}`}
+                />
+                <Tooltip formatter={(v: number) => fmtMoney(v)} cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }} />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '15px' }} 
+                  iconType="circle"
+                  formatter={(value) => <span className="text-xs text-slate-600 font-semibold">{value}</span>} 
+                />
                 {stats.serviceData.map((s, i) => (
-                  <Bar key={s.name} dataKey={s.name} stackId="a" fill={CHART_COLORS[i % CHART_COLORS.length]} radius={0} />
+                  <Bar key={s.name} dataKey={s.name} stackId="a" fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[2, 2, 0, 0]} maxBarSize={45} />
                 ))}
               </BarChart>
             </ResponsiveContainer>
@@ -390,12 +434,12 @@ export default function DashboardPage() {
       <Card className="shadow-card border-none bg-white">
         <CardHeader className="pb-2 border-b-0 flex flex-row items-start justify-between">
           <div>
-            <CardTitle className="text-xl font-semibold text-slate-900">Tendencia de venta</CardTitle>
-            <p className="text-sm text-slate-500 font-medium mt-1">Fechas: <span className="text-slate-800">{trendRange.label}</span></p>
+            <CardTitle className="text-xl font-bold text-slate-800">Tendencia de venta</CardTitle>
+            <p className="text-xs text-slate-500 font-medium mt-1">Fechas: <span className="text-slate-800 font-semibold">{trendRange.label}</span></p>
           </div>
           <div className="w-40">
             <Select value={trendFilter} onValueChange={(v: "todo"|"mes"|"semana"|"dia") => setTrendFilter(v)}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs border-slate-200">
                 <SelectValue placeholder="Filtro" />
               </SelectTrigger>
               <SelectContent>
@@ -409,13 +453,30 @@ export default function DashboardPage() {
         <CardContent className="pt-6">
           {stats.weeklyData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={stats.weeklyData.map(d => ({ ...d, week: d.date }))} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis dataKey="week" tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} tickMargin={12} />
-                <YAxis tick={{ fontSize: 13, fill: "#000", fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.toLocaleString()} />
-                <Tooltip cursor={{ stroke: '#f0f0f0', strokeWidth: 1 }} contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Line type="monotone" dataKey="value" stroke={CHART_COLORS[0]} strokeWidth={3} dot={{ fill: CHART_COLORS[0], strokeWidth: 0, r: 4 }} activeDot={{ r: 6, fill: CHART_COLORS[0], strokeWidth: 0 }} />
-              </LineChart>
+              <AreaChart data={stats.weeklyData.map(d => ({ ...d, week: d.date }))} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#009999" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#009999" stopOpacity={0.00}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={true} vertical={false} />
+                <XAxis 
+                  dataKey="week" 
+                  tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickMargin={8} 
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(v) => `$${v.toLocaleString()}`}
+                />
+                <Tooltip cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }} formatter={(v: number) => fmtMoney(v)} />
+                <Area type="monotone" dataKey="value" stroke="#009999" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" dot={{ fill: "#009999", strokeWidth: 0, r: 3 }} activeDot={{ r: 5, fill: "#009999", strokeWidth: 0 }} />
+              </AreaChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
         </CardContent>
@@ -424,56 +485,54 @@ export default function DashboardPage() {
 
 
       {/* Top 10 Clientes */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-none bg-white">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" /> Top Clientes — Mayor Venta
+          <CardTitle className="text-base text-slate-800 font-semibold flex items-center gap-2">
+            <Users className="h-4 w-4 text-slate-500" /> Top Clientes — Mayor Venta
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {stats.topClients.length > 0 ? (
-            <div className="max-h-[500px] overflow-y-auto overscroll-contain">
+            <div className="max-h-[500px] overflow-y-auto overscroll-contain rounded-md border border-slate-100">
               <Table>
-                <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stats.topClients.map((client, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-                        {i + 1}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <UITooltip delayDuration={200}>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-help border-b border-dashed border-primary/50">{client.name}</span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-white p-3 shadow-lg border">
-                          <p className="font-bold text-xs text-muted-foreground mb-2 uppercase tracking-tight">Servicios de {client.name}</p>
-                          <div className="space-y-1">
-                            {Object.entries(client.services)
-                               .sort((a,b) => b[1] - a[1])
-                               .map(([sname, amount]) => (
-                               <div key={sname} className="flex justify-between items-center gap-4 text-sm">
-                                 <span>{sname}</span>
-                                 <span className="font-semibold">{fmtMoney(amount)}</span>
-                               </div>
-                            ))}
-                          </div>
-                        </TooltipContent>
-                      </UITooltip>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(client.total)}</TableCell>
+                <TableHeader className="bg-slate-50/70 border-b border-slate-200">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-slate-500 font-bold text-xs uppercase w-16 px-4 py-3">Rank</TableHead>
+                    <TableHead className="text-slate-500 font-bold text-xs uppercase px-4 py-3">Cliente</TableHead>
+                    <TableHead className="text-right text-slate-500 font-bold text-xs uppercase px-4 py-3">Total Venta</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {stats.topClients.map((client, i) => (
+                    <TableRow key={i} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="px-4 py-3">
+                        <span className="text-slate-400 font-bold text-xs">{String(i + 1).padStart(2, '0')}</span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-semibold text-slate-700">
+                        <UITooltip delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help border-b border-dashed border-slate-300 hover:border-slate-500 pb-0.5 transition-colors">{client.name}</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white p-3 shadow-lg border border-slate-200 rounded-md">
+                            <p className="font-bold text-[10px] text-slate-400 mb-2 uppercase tracking-wider">Desglose de Servicios</p>
+                            <div className="space-y-1.5">
+                              {Object.entries(client.services)
+                                 .sort((a,b) => b[1] - a[1])
+                                 .map(([sname, amount]) => (
+                                 <div key={sname} className="flex justify-between items-center gap-4 text-xs">
+                                   <span className="text-slate-600 font-medium">{sname}</span>
+                                   <span className="font-bold text-slate-800">{fmtMoney(amount)}</span>
+                                 </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        </UITooltip>
+                      </TableCell>
+                      <TableCell className="text-right px-4 py-3 font-bold text-slate-800 tabular-nums">{fmtMoney(client.total)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">Sin datos de clientes</p>
@@ -570,41 +629,81 @@ function EmptyChart() {
   );
 }
 
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, payload }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  if (percent < 0.06) return null; // Solo mostrar si representa >= 6% del pastel para evitar sobrelapados
+
+  const labelName = payload?.name || name || "";
+  const displayName = labelName.length > 10 ? `${labelName.substring(0, 10)}.` : labelName;
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#FFFFFF"
+      textAnchor="middle"
+      dominantBaseline="central"
+      className="text-[10px] font-bold fill-white pointer-events-none drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.5)]"
+      style={{ fontFamily: 'inherit' }}
+    >
+      {displayName}
+    </text>
+  );
+};
+
 function PieCard({ title, data, fmtMoney }: { title: string; data: { name: string; value: number; pct: number }[]; fmtMoney: (v: number) => string }) {
   return (
-    <Card className="shadow-card">
+    <Card className="shadow-card border-none bg-white">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="text-base text-slate-800 font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={65}
-                outerRadius={90}
-                paddingAngle={2}
-                dataKey="value"
-                stroke="none"
-              >
-                {data.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => fmtMoney(v)} />
-              <Legend 
-                layout="vertical" 
-                verticalAlign="middle" 
-                align="right"
-                iconType="square"
-                wrapperStyle={{ fontSize: '13px', color: '#000', fontWeight: 600, paddingLeft: '20px' }}
-                formatter={(value, entry: any) => <span style={{ color: '#000' }}>{value} ({entry.payload.pct}%)</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Legend a la izquierda, similar a la Imagen 1 */}
+            <div className="flex flex-col justify-center space-y-1.5 w-full md:w-1/2 pr-0 md:pr-4">
+              {data.map((item, i) => (
+                <div key={i} className="flex flex-col w-full pb-1.5 border-b border-slate-100 last:border-b-0">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                      <span className="text-slate-600 font-medium truncate max-w-[130px]">{item.name}</span>
+                    </div>
+                    <span className="text-slate-800 font-bold tabular-nums">{fmtMoney(item.value)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pie Chart a la derecha */}
+            <div className="w-full md:w-1/2 flex justify-center">
+              <ResponsiveContainer width="100%" height={230}>
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={90}
+                    dataKey="value"
+                    stroke="#FFFFFF"
+                    strokeWidth={1.5}
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                  >
+                    {data.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => fmtMoney(v)} contentStyle={{ borderRadius: '6px', border: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         ) : <EmptyChart />}
       </CardContent>
     </Card>
