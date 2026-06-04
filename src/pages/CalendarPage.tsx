@@ -262,7 +262,7 @@ export default function CalendarPage() {
           ) : (
             <div className="overflow-auto">
               {/* Header: blank + day columns */}
-              <div className="grid border-b border-border bg-slate-50 sticky top-0 z-10" style={{ gridTemplateColumns: `64px repeat(7, 1fr)` }}>
+              <div className="grid border-b border-border bg-slate-50 sticky top-0 z-10" style={{ gridTemplateColumns: `64px repeat(7, minmax(0, 1fr))` }}>
                 <div className="border-r border-border" />
                 {weekData.weekDays!.map((day) => {
                   const isToday = isSameDay(day, new Date());
@@ -281,7 +281,7 @@ export default function CalendarPage() {
 
               {/* Hour rows — only hours with tasks */}
               {weekData.hours.map((hour) => (
-                <div key={hour} className="grid border-b border-border last:border-b-0" style={{ gridTemplateColumns: `64px repeat(7, 1fr)` }}>
+                <div key={hour} className="grid border-b border-border last:border-b-0" style={{ gridTemplateColumns: `64px repeat(7, minmax(0, 1fr))` }}>
                   {/* Hour label */}
                   <div className="border-r border-border flex items-start justify-end pr-2 pt-2">
                     <span className="text-[10px] font-mono font-semibold text-slate-400">
@@ -322,15 +322,15 @@ export default function CalendarPage() {
                                 key={task.id}
                                 onClick={() => setSelectedTask(task)}
                                 style={offsetPx > 0 ? { marginTop: `${offsetPx}px` } : undefined}
-                                className={`w-full text-left px-2 py-1 rounded text-[11px] font-medium ${bgColor} hover:opacity-85 transition-opacity`}
+                                className={`w-full min-w-0 text-left px-2 py-1 rounded text-[13px] font-semibold ${bgColor} hover:opacity-85 transition-opacity`}
                               >
-                                <div className="flex justify-between items-center gap-1">
-                                  <span className="flex-1 overflow-hidden whitespace-nowrap leading-tight">{task.client?.name || "Sin cliente"}</span>
+                                <div className="flex justify-between items-center gap-1 min-w-0">
+                                  <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap leading-tight">{task.client?.name || "Sin cliente"}</span>
                                   {timeLabel && (
-                                    <span className="text-[9px] bg-black/20 px-1 py-0.5 rounded font-bold shrink-0 tabular-nums">{timeLabel}</span>
+                                    <span className="text-[11px] bg-black/15 px-1.5 py-0.5 rounded font-bold shrink-0 tabular-nums">{timeLabel}</span>
                                   )}
                                 </div>
-                                <div className="text-[9px] opacity-80 mt-0.5 leading-tight">
+                                <div className="text-[11px] opacity-80 mt-0.5 leading-tight overflow-hidden text-ellipsis whitespace-nowrap">
                                   {type === "inspection" ? "Inspección" : task.status}
                                 </div>
                               </button>
@@ -379,11 +379,11 @@ export default function CalendarPage() {
                     <button
                       key={task.id + type}
                       onClick={() => setSelectedTask(task)}
-                      className={`w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium ${bgColor} hover:opacity-80 transition-opacity flex justify-between items-center gap-1 overflow-hidden`}
+                      className={`w-full min-w-0 text-left px-1.5 py-0.5 rounded text-[12px] font-semibold ${bgColor} hover:opacity-80 transition-opacity flex justify-between items-center gap-1 overflow-hidden`}
                     >
-                      <span className="flex-1 overflow-hidden whitespace-nowrap">{type === "inspection" ? "Insp: " : "Serv: "}{task.client?.name || "Sin cliente"}</span>
+                      <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{type === "inspection" ? "Insp: " : "Serv: "}{task.client?.name || "Sin cliente"}</span>
                       {timeLabel && (
-                        <span className="text-[8px] bg-black/20 px-1 py-0.5 rounded-sm font-bold shrink-0">{timeLabel}</span>
+                        <span className="text-[10px] bg-black/15 px-1 py-0.5 rounded-sm font-bold shrink-0">{timeLabel}</span>
                       )}
                     </button>
                   );
