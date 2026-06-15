@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, DollarSign, Loader2, Search, Check, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, DollarSign, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { type Category, type Client, type Profile, type TaskStatus, STATUS_COLUMNS } from "@/types/crm";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -43,21 +46,14 @@ export function CreateTaskDialog({
   onCreateClient,
 }: CreateTaskDialogProps) {
   const [clientId, setClientId] = useState("");
-  const [clientSearch, setClientSearch] = useState("");
-  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const [newClientMode, setNewClientMode] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientBranch, setNewClientBranch] = useState("");
-  const clientSearchRef = useRef<HTMLInputElement>(null);
 
-  const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return clients;
-    const q = clientSearch.toLowerCase();
-    return clients.filter(c => c.name.toLowerCase().includes(q));
-  }, [clients, clientSearch]);
-  
+
   const [inspectionDate, setInspectionDate] = useState("");
   const [inspectionTimeStart, setInspectionTimeStart] = useState("");
   const [inspectionTimeEnd, setInspectionTimeEnd] = useState("");
@@ -97,7 +93,7 @@ export function CreateTaskDialog({
 
   const resetForm = () => {
     setClientId("");
-    setClientSearch("");
+    setClientPickerOpen(false);
     setNewClientMode(false);
     setNewClientName("");
     setNewClientAddress("");
@@ -176,7 +172,12 @@ export function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Nueva Tarea</DialogTitle>
         </DialogHeader>
@@ -202,53 +203,48 @@ export function CreateTaskDialog({
                 <Input placeholder="Teléfono" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
               </div>
             ) : (
-              <div className="relative">
-                {/* Searchable client combobox */}
-                <div
-                  className="flex items-center border rounded-md px-3 h-9 gap-2 cursor-pointer bg-white hover:border-primary/50 transition-colors"
-                  onClick={() => { setClientDropdownOpen(true); setTimeout(() => clientSearchRef.current?.focus(), 50); }}
-                >
-                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <input
-                    ref={clientSearchRef}
-                    value={clientSearch}
-                    onChange={(e) => { setClientSearch(e.target.value); setClientDropdownOpen(true); }}
-                    onFocus={() => setClientDropdownOpen(true)}
-                    placeholder={clientId ? (clients.find(c => c.id === clientId)?.name ?? "Seleccionar cliente...") : "Buscar cliente..."}
-                    className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-                    style={{ color: clientId && !clientSearch ? 'inherit' : undefined }}
-                  />
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                </div>
-                {clientDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => { setClientDropdownOpen(false); setClientSearch(""); }} />
-                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                      {filteredClients.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</div>
-                      ) : (
-                        filteredClients.map(c => (
-                          <button
+              <Popover open={clientPickerOpen} onOpenChange={setClientPickerOpen} modal={true}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientPickerOpen}
+                    className={cn(
+                      "w-full justify-between font-normal h-9 bg-white",
+                      !clientId && "text-muted-foreground",
+                    )}
+                  >
+                    {clientId
+                      ? (clients.find((c) => c.id === clientId)?.name ?? "Seleccionar cliente...")
+                      : "Seleccionar cliente..."}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0" align="start" style={{ width: "var(--radix-popover-trigger-width)" }}>
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>Sin resultados</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((c) => (
+                          <CommandItem
                             key={c.id}
-                            type="button"
-                            className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-primary/5 transition-colors ${
-                              c.id === clientId ? "bg-primary/10 text-primary font-medium" : "text-foreground"
-                            }`}
-                            onClick={() => {
+                            value={c.name}
+                            onSelect={() => {
                               setClientId(c.id);
-                              setClientSearch("");
-                              setClientDropdownOpen(false);
+                              setClientPickerOpen(false);
                             }}
                           >
-                            <span>{c.name}</span>
-                            {c.id === clientId && <Check className="h-3.5 w-3.5 text-primary" />}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+                            <Check className={cn("mr-2 h-4 w-4", c.id === clientId ? "opacity-100" : "opacity-0")} />
+                            {c.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
             
             {isFixedClient && (

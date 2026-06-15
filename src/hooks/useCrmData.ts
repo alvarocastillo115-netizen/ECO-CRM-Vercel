@@ -152,6 +152,7 @@ export function useCrmData() {
         specifications?: string;
         assigned_to_user_id?: string | null;
         status?: TaskStatus;
+        is_paid?: boolean;
         services?: { category_id: string; amount_allocated: number }[];
       }
     ) => {

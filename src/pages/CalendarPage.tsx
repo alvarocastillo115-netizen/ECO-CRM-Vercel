@@ -24,7 +24,7 @@ import {
 import { es } from "date-fns/locale";
 
 export default function CalendarPage() {
-  const { tasks, clients, categories, employees, loading, createTask, createClient, updateTask, updateTaskStatus } = useCrmData();
+  const { tasks, clients, categories, employees, loading, createTask, createClient, updateTask, updateTaskStatus, deleteTask } = useCrmData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week">("week");
   const [selectedTask, setSelectedTask] = useState<CrmTask | null>(null);
@@ -426,7 +426,8 @@ export default function CalendarPage() {
         employees={employees}
         onUpdateTask={updateTask}
         onUpdateStatus={updateTaskStatus}
-        readOnly={true}
+        onDeleteTask={deleteTask}
+        readOnly={false}
       />
 
       <CreateTaskDialog

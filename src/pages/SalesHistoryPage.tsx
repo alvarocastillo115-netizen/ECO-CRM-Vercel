@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -22,7 +23,7 @@ import type { TaskStatus } from "@/types/crm";
 import { toast } from "@/hooks/use-toast";
 
 export default function SalesHistoryPage() {
-  const { tasks, employees, categories, loading, updateTaskStatus } = useCrmData();
+  const { tasks, employees, categories, loading, updateTaskStatus, updateTask } = useCrmData();
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -80,7 +81,7 @@ export default function SalesHistoryPage() {
 
   const handleExport = () => {
     const headers = [
-      "Cliente", "Sucursal", "Fecha de Servicio", "Monto Total ($)",
+      "Cliente", "Sucursal", "Fecha de Servicio", "Monto Total ($)", "Estado de Pago",
       "Vendedor", "Especificaciones",
       ...categories.map(c => c.name),
     ];
@@ -97,6 +98,7 @@ export default function SalesHistoryPage() {
         t.client?.branch || "",
         serviceDateStr,
         parseFloat(t.total_amount.toFixed(2)),
+        t.is_paid ? "Pagado" : "Pendiente",
         emp?.full_name || emp?.email || "Sin asignar",
         t.specifications || "",
         ...categories.map(c => {
@@ -107,7 +109,7 @@ export default function SalesHistoryPage() {
     });
 
     const totalsRow = [
-      "TOTAL", "", "", parseFloat(totalRevenue.toFixed(2)), "", "",
+      "TOTAL", "", "", parseFloat(totalRevenue.toFixed(2)), "", "", "",
       ...categories.map(c =>
         parseFloat(completedTasks.reduce((s, t) => {
           const svc = t.services?.find(s => s.category_id === c.id);
@@ -119,7 +121,7 @@ export default function SalesHistoryPage() {
     const wsData = [headers, ...rows, totalsRow];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws["!cols"] = [
-      { wch: 28 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+      { wch: 28 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
       { wch: 22 }, { wch: 36 },
       ...categories.map(() => ({ wch: 18 })),
     ];
@@ -295,13 +297,14 @@ export default function SalesHistoryPage() {
                   <TableHead className="font-bold">Servicios realizados</TableHead>
                   <TableHead className="font-bold text-right">Monto</TableHead>
                   <TableHead className="font-bold">Vendedor</TableHead>
+                  <TableHead className="font-bold text-center w-[80px]">Pago</TableHead>
                   {isAdmin && <TableHead className="font-bold w-[110px] text-center">Acción</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {completedTasks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-12 text-muted-foreground">
                       {search || dateRange?.from
                         ? "No hay resultados para los filtros seleccionados"
                         : "No hay servicios finalizados aún"}
@@ -328,6 +331,30 @@ export default function SalesHistoryPage() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {emp?.full_name || emp?.email || <span className="italic">Sin asignar</span>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={task.is_paid || false}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                const { error } = await updateTask(task.id, { is_paid: !!checked });
+                                if (error) {
+                                  toast({
+                                    title: "Error al actualizar pago",
+                                    description: error,
+                                    variant: "destructive",
+                                  });
+                                } else {
+                                  toast({
+                                    title: checked ? "Pago recibido" : "Pago pendiente",
+                                    description: `Estado de pago actualizado para ${task.client?.name || "el cliente"}.`,
+                                  });
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                          />
                         </TableCell>
                         {isAdmin && (
                           <TableCell className="text-center">
