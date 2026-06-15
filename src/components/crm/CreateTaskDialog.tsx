@@ -257,24 +257,22 @@ export function CreateTaskDialog({
               </div>
             )}
             
-            {clientId && !newClientMode && (
-              <div className="mt-3">
-                <Label>Estatus inicial</Label>
-                <Select value={status} onValueChange={(val: TaskStatus) => setStatus(val)}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUS_COLUMNS.map(col => (
-                      <SelectItem key={col.id} value={col.id}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: col.color }} />
-                          {col.title}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="mt-3">
+              <Label>Estatus inicial</Label>
+              <Select value={status} onValueChange={(val: TaskStatus) => setStatus(val)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STATUS_COLUMNS.map(col => (
+                    <SelectItem key={col.id} value={col.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: col.color }} />
+                        {col.title}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Categories multi-select with amounts */}

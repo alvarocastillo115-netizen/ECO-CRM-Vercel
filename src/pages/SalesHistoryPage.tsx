@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -28,6 +27,7 @@ export default function SalesHistoryPage() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">("all");
 
   // Revert dialog state
   const [revertTaskId, setRevertTaskId] = useState<string | null>(null);
@@ -65,8 +65,13 @@ export default function SalesHistoryPage() {
           return isWithinInterval(d, { start: from, end: to });
         } catch { return false; }
       })
+      .filter(t => {
+        if (paymentFilter === "all") return true;
+        if (paymentFilter === "paid") return !!t.is_paid;
+        return !t.is_paid;
+      })
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [tasks, employees, search, dateRange]);
+  }, [tasks, employees, search, dateRange, paymentFilter]);
 
   const totalRevenue = useMemo(() => completedTasks.reduce((s, t) => s + t.total_amount, 0), [completedTasks]);
 
@@ -272,9 +277,19 @@ export default function SalesHistoryPage() {
             />
           </PopoverContent>
         </Popover>
-        {(search || dateRange?.from) && (
+        <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as "all" | "paid" | "unpaid")}>
+          <SelectTrigger className="h-9 w-[150px] bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los pagos</SelectItem>
+            <SelectItem value="paid">Pagados</SelectItem>
+            <SelectItem value="unpaid">Pendientes</SelectItem>
+          </SelectContent>
+        </Select>
+        {(search || dateRange?.from || paymentFilter !== "all") && (
           <Button variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground"
-            onClick={() => { setSearch(""); setDateRange(undefined); }}>
+            onClick={() => { setSearch(""); setDateRange(undefined); setPaymentFilter("all"); }}>
             Limpiar filtros
           </Button>
         )}
@@ -333,28 +348,33 @@ export default function SalesHistoryPage() {
                           {emp?.full_name || emp?.email || <span className="italic">Sin asignar</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Checkbox
-                            checked={task.is_paid || false}
-                            onCheckedChange={async (checked) => {
-                              try {
-                                const { error } = await updateTask(task.id, { is_paid: !!checked });
-                                if (error) {
-                                  toast({
-                                    title: "Error al actualizar pago",
-                                    description: error,
-                                    variant: "destructive",
-                                  });
-                                } else {
-                                  toast({
-                                    title: checked ? "Pago recibido" : "Pago pendiente",
-                                    description: `Estado de pago actualizado para ${task.client?.name || "el cliente"}.`,
-                                  });
-                                }
-                              } catch (err) {
-                                console.error(err);
+                          <button
+                            type="button"
+                            aria-label={task.is_paid ? "Marcar como pendiente" : "Marcar como pagado"}
+                            onClick={async () => {
+                              const newValue = !task.is_paid;
+                              const { error } = await updateTask(task.id, { is_paid: newValue });
+                              if (error) {
+                                toast({
+                                  title: "Error al actualizar pago",
+                                  description: error,
+                                  variant: "destructive",
+                                });
+                              } else {
+                                toast({
+                                  title: newValue ? "Pago recibido" : "Pago pendiente",
+                                  description: `Estado de pago actualizado para ${task.client?.name || "el cliente"}.`,
+                                });
                               }
                             }}
-                          />
+                            className={`inline-flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                              task.is_paid
+                                ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-white border-slate-300 hover:border-slate-400"
+                            }`}
+                          >
+                            {task.is_paid && <X className="h-3.5 w-3.5" strokeWidth={3} />}
+                          </button>
                         </TableCell>
                         {isAdmin && (
                           <TableCell className="text-center">
