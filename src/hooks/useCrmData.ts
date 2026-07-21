@@ -71,7 +71,9 @@ export function useCrmData() {
       client_id: string;
       description: string;
       inspection_date: string | null;
+      inspection_time?: string;
       service_date: string | null;
+      service_time?: string;
       specifications: string;
       assigned_to_user_id: string | null;
       services: { category_id: string; amount_allocated: number }[];
@@ -91,7 +93,9 @@ export function useCrmData() {
           client_id: data.client_id,
           description: data.description,
           inspection_date: data.inspection_date,
+          inspection_time: data.inspection_time ?? "",
           service_date: data.service_date,
+          service_time: data.service_time ?? "",
           specifications: data.specifications,
           assigned_to_user_id: assignedToUserId,
           total_amount: total,

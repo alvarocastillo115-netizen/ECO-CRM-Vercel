@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Loader2, Download, Plus } from "lucide-react
 import { TaskDetailDialog } from "@/components/crm/TaskDetailDialog";
 import { CreateTaskDialog } from "@/components/crm/CreateTaskDialog";
 import type { CrmTask, TaskStatus } from "@/types/crm";
+import { STATUS_COLUMNS } from "@/types/crm";
 import {
   format,
   startOfMonth,
@@ -159,6 +160,41 @@ export default function CalendarPage() {
     }
     return days;
   }, [currentDate, viewMode]);
+
+  // Ingresos por día (solo Servicio Agendado, en proceso y completado, por service_date).
+  // Los completados se incluyen aunque ya no aparezcan como tarjeta en el calendario.
+  const revenueByStatusByDate = useMemo(() => {
+    const map: Record<string, { agendado: number; proceso: number; completado: number }> = {};
+    tasks.forEach((t) => {
+      if (!t.service_date) return;
+      if (t.status !== "Servicio Agendado" && t.status !== "Servicio en proceso" && t.status !== "Servicio completado") return;
+      if (!map[t.service_date]) map[t.service_date] = { agendado: 0, proceso: 0, completado: 0 };
+      const amount = Number(t.total_amount) || 0;
+      if (t.status === "Servicio Agendado") map[t.service_date].agendado += amount;
+      else if (t.status === "Servicio en proceso") map[t.service_date].proceso += amount;
+      else map[t.service_date].completado += amount;
+    });
+    return map;
+  }, [tasks]);
+
+  const getDayTotal = (dateKey: string) => {
+    const r = revenueByStatusByDate[dateKey];
+    return r ? r.agendado + r.proceso + r.completado : 0;
+  };
+
+  // Resumen del periodo visible (semana o mes) para la esquina inferior derecha.
+  const periodSummary = useMemo(() => {
+    const days = viewMode === "week" ? weekData.weekDays : calendarDays;
+    const sum = { agendado: 0, proceso: 0, completado: 0 };
+    days.forEach((day) => {
+      const r = revenueByStatusByDate[format(day, "yyyy-MM-dd")];
+      if (!r) return;
+      sum.agendado += r.agendado;
+      sum.proceso += r.proceso;
+      sum.completado += r.completado;
+    });
+    return { ...sum, total: sum.agendado + sum.proceso + sum.completado };
+  }, [viewMode, weekData, calendarDays, revenueByStatusByDate]);
 
   const statusColor: Record<string, string> = {
     "Primer contacto": "bg-[#E3B075]/20 text-[#E3B075]",
@@ -342,6 +378,23 @@ export default function CalendarPage() {
                   })}
                 </div>
               ))}
+              {/* Fila de totales por día */}
+              <div className="grid border-t-2 border-border bg-slate-50 sticky bottom-0 z-10" style={{ gridTemplateColumns: `64px repeat(7, minmax(0, 1fr))` }}>
+                <div className="border-r border-border flex items-center justify-end pr-2 py-2">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Total</span>
+                </div>
+                {weekData.weekDays!.map((day) => {
+                  const dateKey = format(day, "yyyy-MM-dd");
+                  const dTotal = getDayTotal(dateKey);
+                  return (
+                    <div key={dateKey} className="border-r border-border last:border-r-0 py-2 px-2 text-center">
+                      <span className="text-xs font-bold text-emerald-700 tabular-nums">
+                        {dTotal > 0 ? `$${dTotal.toLocaleString("en-US")}` : "—"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )
         ) : (
@@ -358,6 +411,7 @@ export default function CalendarPage() {
               {calendarDays.map((day, i) => {
                 const dateKey = format(day, "yyyy-MM-dd");
                 const dayTasks = tasksByDate[dateKey] || [];
+                const dTotal = getDayTotal(dateKey);
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isToday = isSameDay(day, new Date());
 
@@ -409,6 +463,13 @@ export default function CalendarPage() {
                         <span className="text-[10px] text-muted-foreground pl-1">+{dayTasks.length - 3} más</span>
                       )}
                     </div>
+                    {dTotal > 0 && (
+                      <div className="px-1.5 pb-1 pt-0.5 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-emerald-700 tabular-nums">
+                          ${dTotal.toLocaleString("en-US")}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -416,6 +477,37 @@ export default function CalendarPage() {
           </>
         )}
         </Card>
+
+        {/* Resumen de ingresos del periodo — esquina inferior derecha */}
+        <div className="flex justify-end mt-4">
+          <div className="bg-white border shadow-xl rounded-lg p-3 min-w-[260px] max-w-xs">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Totales del calendario ({viewMode === "week" ? "semana" : "mes"})
+            </div>
+            <div className="space-y-1.5">
+              {([
+                { id: "Servicio Agendado" as const, amount: periodSummary.agendado },
+                { id: "Servicio en proceso" as const, amount: periodSummary.proceso },
+                { id: "Servicio completado" as const, amount: periodSummary.completado },
+              ]).map((row) => {
+                const col = STATUS_COLUMNS.find((c) => c.id === row.id);
+                return (
+                  <div key={row.id} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: col?.color }} />
+                      <span className="truncate font-medium">{col?.title}</span>
+                    </span>
+                    <span className="font-semibold tabular-nums whitespace-nowrap">${row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs">
+              <span className="font-bold uppercase tracking-wider text-[10px]">Total</span>
+              <span className="font-bold tabular-nums">${periodSummary.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <TaskDetailDialog
