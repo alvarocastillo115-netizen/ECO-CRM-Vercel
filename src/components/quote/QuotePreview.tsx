@@ -27,7 +27,11 @@ export function QuotePreview({
   tipoServicio, refCode, clienteNombre, clienteDireccion,
   asesorNombre, asesorTelefono, asesorEmail, fecha, tiempoEntrega, incluyeIva, items,
 }: QuotePreviewProps) {
-  const total = items.reduce((s, it) => s + (Number(it.cantidad) || 0) * (Number(it.precio) || 0), 0);
+  // Los precios de cada línea se muestran tal cual se ingresan (subtotal).
+  // Si la cotización incluye IVA, se agrega el 13% como línea aparte y se suma al total.
+  const subtotal = items.reduce((s, it) => s + (Number(it.cantidad) || 0) * (Number(it.precio) || 0), 0);
+  const iva = incluyeIva ? subtotal * 0.13 : 0;
+  const total = subtotal + iva;
   const fechaFmt = format(fecha, "d 'de' MMMM 'de' yyyy", { locale: es });
 
   return (
@@ -90,15 +94,32 @@ export function QuotePreview({
           )}
         </div>
 
-        {/* Note + total */}
-        <div className="flex justify-between items-end mt-4">
-          <p className="text-[12px] text-slate-500 leading-relaxed max-w-[60%]">
+        {/* Note + totales */}
+        <div className="flex justify-between items-end mt-4 gap-6">
+          <p className="text-[12px] text-slate-500 leading-relaxed max-w-[55%]">
             Personal profesional a tu servicio · Personal capacitado<br />
-            Productos y maquinaria especializada{incluyeIva ? " · IVA 13% incluido" : ""}
+            Productos y maquinaria especializada
           </p>
-          <div className="flex items-baseline gap-3">
-            <span className="text-[11px] font-bold tracking-[0.18em]" style={{ color: HEADER_GREEN }}>TOTAL</span>
-            <span className="text-2xl font-bold" style={{ color: HEADER_GREEN }}>{formatMoney(total)}</span>
+          <div className="min-w-[220px]">
+            {incluyeIva && (
+              <>
+                <div className="flex justify-between gap-8 text-[13px] text-slate-600">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">{formatMoney(subtotal)}</span>
+                </div>
+                <div className="flex justify-between gap-8 text-[13px] text-slate-600 mt-1">
+                  <span>IVA (13%)</span>
+                  <span className="tabular-nums">{formatMoney(iva)}</span>
+                </div>
+              </>
+            )}
+            <div
+              className={`flex justify-between gap-8 items-baseline ${incluyeIva ? "mt-2 pt-2 border-t" : ""}`}
+              style={incluyeIva ? { borderColor: HEADER_GREEN } : undefined}
+            >
+              <span className="text-[11px] font-bold tracking-[0.18em]" style={{ color: HEADER_GREEN }}>TOTAL</span>
+              <span className="text-2xl font-bold tabular-nums" style={{ color: HEADER_GREEN }}>{formatMoney(total)}</span>
+            </div>
           </div>
         </div>
 

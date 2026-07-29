@@ -133,7 +133,7 @@ export default function QuoteGeneratorPage() {
 
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="iva" checked={incluyeIva} onCheckedChange={(v) => setIncluyeIva(v === true)} />
-                <Label htmlFor="iva" className="cursor-pointer font-normal">Los precios incluyen IVA (13%)</Label>
+                <Label htmlFor="iva" className="cursor-pointer font-normal">Incluir IVA (13%)</Label>
               </div>
             </CardContent>
           </Card>
