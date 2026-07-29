@@ -24,7 +24,7 @@ serve(async (req) => {
     if (!roleData) return new Response(JSON.stringify({ error: "Admin only" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
-    const { id, email, full_name, password, action } = body;
+    const { id, email, full_name, password, phone, action } = body;
     
     if (!id) {
       return new Response(JSON.stringify({ error: "id is required" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -60,7 +60,9 @@ serve(async (req) => {
     }
 
     // Update profile table sync
-    await supabase.from("profiles").update({ email, full_name }).eq("id", id);
+    const profileUpdate: Record<string, unknown> = { email, full_name };
+    if (phone !== undefined) profileUpdate.phone = phone;
+    await supabase.from("profiles").update(profileUpdate).eq("id", id);
 
     return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

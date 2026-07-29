@@ -16,6 +16,8 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const CommissionsPage = lazy(() => import("@/pages/CommissionsPage"));
 const SalesHistoryPage = lazy(() => import("@/pages/SalesHistoryPage"));
+const ProspectsPage = lazy(() => import("@/pages/ProspectsPage"));
+const QuoteGeneratorPage = lazy(() => import("@/pages/QuoteGeneratorPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -87,6 +89,8 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/prospects" element={<ProspectsPage />} />
+                <Route path="/cotizaciones" element={<QuoteGeneratorPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

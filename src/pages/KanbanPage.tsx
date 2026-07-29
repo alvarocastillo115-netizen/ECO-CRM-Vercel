@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { STATUS_COLUMNS, TaskStatus, CrmTask } from "@/types/crm";
 import { useCrmData } from "@/hooks/useCrmData";
+import { isProspect } from "@/lib/prospects";
 import { CrmKanbanColumn } from "@/components/crm/CrmKanbanColumn";
 import { CreateTaskDialog } from "@/components/crm/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/crm/TaskDetailDialog";
@@ -37,7 +38,7 @@ export default function KanbanPage() {
     : allTasks.filter((t) => t.assigned_to_user_id === user?.id);
 
   const getTasksByStatus = (status: TaskStatus) =>
-    tasks.filter((t) => t.status === status);
+    tasks.filter((t) => t.status === status && !isProspect(t));
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createDialogStatus, setCreateDialogStatus] = useState<TaskStatus>("Primer contacto");
@@ -57,6 +58,7 @@ export default function KanbanPage() {
   const kanbanColumns = STATUS_COLUMNS;
   const filteredTableTasks = tasks
     .filter(t => t.status !== "Servicio completado")
+    .filter(t => !isProspect(t))
     .filter(t => filterStatus === "all" || t.status === filterStatus)
     .filter(t => {
       const cName = t.client?.name?.toLowerCase() || "";

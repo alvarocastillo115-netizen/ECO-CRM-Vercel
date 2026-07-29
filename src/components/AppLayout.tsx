@@ -12,17 +12,21 @@ import {
   User,
   CalendarDays,
   Contact,
+  UserPlus,
   DollarSign,
   History,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { path: "/", label: "Servicios", icon: KanbanSquare, adminOnly: false },
+  { path: "/prospects", label: "Base de Prospectos", icon: UserPlus, adminOnly: false },
   { path: "/calendar", label: "Calendario", icon: CalendarDays, adminOnly: false },
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
   { path: "/sales-history", label: "Historial de Ventas", icon: History, adminOnly: false },
+  { path: "/cotizaciones", label: "Generador de Coti.", icon: FileText, adminOnly: false },
   { path: "/commissions", label: "Comisiones", icon: DollarSign, adminOnly: true },
   { path: "/clients", label: "Clientes", icon: Contact, adminOnly: false },
   { path: "/settings", label: "Configuración", icon: Settings, adminOnly: true },

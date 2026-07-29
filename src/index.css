@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -114,8 +114,28 @@
   background-color: transparent;
   border-radius: 4px;
 }
-.kanban-scroll-area:hover::-webkit-scrollbar-thumb, 
+.kanban-scroll-area:hover::-webkit-scrollbar-thumb,
 .kanban-scroll-area:focus-within::-webkit-scrollbar-thumb,
 .kanban-scroll-area:active::-webkit-scrollbar-thumb {
   background-color: rgba(0,0,0,0.2);
+}
+
+/* ── Impresión del Generador de Cotizaciones ── */
+@media print {
+  /* Ocultar todo... */
+  body * { visibility: hidden; }
+  /* ...excepto la cotización */
+  #quote-print, #quote-print * { visibility: visible; }
+  #quote-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    min-height: 100vh;
+    box-shadow: none !important;
+  }
+  .no-print { display: none !important; }
+  /* Márgenes en 0 = cotización a página completa (bordes verdes de lado a lado)
+     y sin el encabezado/pie automático del navegador. */
+  @page { size: A4; margin: 0; }
 }
