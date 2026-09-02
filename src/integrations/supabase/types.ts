@@ -41,6 +41,7 @@ export type Database = {
           branch: string
           created_at: string
           id: string
+          is_fixed: boolean
           name: string
           phone: string
         }
@@ -49,6 +50,7 @@ export type Database = {
           branch?: string
           created_at?: string
           id?: string
+          is_fixed?: boolean
           name: string
           phone?: string
         }
@@ -57,6 +59,7 @@ export type Database = {
           branch?: string
           created_at?: string
           id?: string
+          is_fixed?: boolean
           name?: string
           phone?: string
         }

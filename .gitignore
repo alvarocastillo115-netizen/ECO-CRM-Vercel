@@ -28,3 +28,6 @@ dist-ssr
 
 .vercel
 .env*
+
+# Supabase CLI local state (no las migraciones, esas sí van al repo)
+supabase/.temp

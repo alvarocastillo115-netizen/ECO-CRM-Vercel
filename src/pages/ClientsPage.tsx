@@ -195,10 +195,22 @@ export default function ClientsPage() {
             refetch();
             return { error: null };
           }
-          const { error } = await supabase.from("clients").update(data).eq("id", editClient.id);
+          // .select() para saber cuántas filas se tocaron: si RLS bloquea el
+          // UPDATE, PostgREST responde éxito con 0 filas y sin error, y el
+          // usuario veía "Cliente actualizado" aunque no se guardó nada.
+          const { data: updated, error } = await supabase
+            .from("clients")
+            .update(data)
+            .eq("id", editClient.id)
+            .select("id");
           if (error) {
             toast.error(error.message);
             return { error: error.message };
+          }
+          if (!updated || updated.length === 0) {
+            const msg = "No se guardaron los cambios: no tienes permisos para editar clientes.";
+            toast.error(msg);
+            return { error: msg };
           }
           toast.success("Cliente actualizado");
           refetch();
@@ -359,9 +371,17 @@ function ClientFormDialog({
               onClick={async () => {
                 if (!window.confirm("¿Estás seguro de eliminar este cliente?")) return;
                 setSaving(true);
-                const { error } = await supabase.from("clients").delete().eq("id", client.id);
+                // Mismo caso que el UPDATE: si RLS filtra la fila, el DELETE
+                // responde éxito sin borrar nada. .select() lo delata.
+                const { data: deleted, error } = await supabase
+                  .from("clients")
+                  .delete()
+                  .eq("id", client.id)
+                  .select("id");
                 if (error) {
                   toast.error("Error al eliminar: " + error.message);
+                } else if (!deleted || deleted.length === 0) {
+                  toast.error("No se eliminó el cliente: no tienes permisos para borrarlo.");
                 } else {
                   toast.success("Cliente eliminado");
                   onOpenChange(false);

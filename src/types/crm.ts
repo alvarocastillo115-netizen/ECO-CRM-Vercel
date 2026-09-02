@@ -9,6 +9,7 @@ export interface CrmTask {
   inspection_date: string | null;
   service_date: string | null;
   total_amount: number;
+  is_paid: boolean;
   keep_an_eye_date: string | null;
   keep_an_eye_period_months: number | null;
   inspection_time?: string;

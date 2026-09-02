@@ -16,6 +16,12 @@ import {
 import { Plus, Loader2, Tag, Users, ShieldCheck, ShieldAlert, Pencil, Trash2, Check, X, UserCog, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import type { AppRole } from "@/types/crm";
+
+// El Select de Radix entrega un string suelto. Validamos en el borde para que
+// nunca llegue un rol inválido al insert de user_roles (la columna es un enum).
+const isAppRole = (value: string): value is AppRole =>
+  value === "admin" || value === "employee";
 
 export default function SettingsPage() {
   return (
@@ -273,6 +279,10 @@ function EmployeeManager() {
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!isAppRole(newRole)) {
+      toast({ title: "Rol inválido", description: `"${newRole}" no es un rol válido.`, variant: "destructive" });
+      return;
+    }
     setUpdatingRoleId(userId);
     // Delete existing role first, then insert new one
     // (unique constraint is on user_id+role pair, so upsert won't work cleanly)
